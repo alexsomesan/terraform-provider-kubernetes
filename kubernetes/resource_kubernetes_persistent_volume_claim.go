@@ -47,7 +47,7 @@ func resourceKubernetesPersistentVolumeClaimCreate(d *schema.ResourceData, meta 
 		return err
 	}
 	log.Printf("[INFO] Creating new persistent volume claim: %#v", claim)
-	out, err := conn.CoreV1().PersistentVolumeClaims(claim.Namespace).Create(&claim)
+	out, err := conn.CoreV1().PersistentVolumeClaims(claim.Namespace).Create(claim)
 	if err != nil {
 		return err
 	}
