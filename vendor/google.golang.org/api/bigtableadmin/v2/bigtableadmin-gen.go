@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC.
+// Copyright 2020 Google LLC.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -53,9 +53,10 @@ import (
 	"strconv"
 	"strings"
 
-	gensupport "google.golang.org/api/gensupport"
 	googleapi "google.golang.org/api/googleapi"
+	gensupport "google.golang.org/api/internal/gensupport"
 	option "google.golang.org/api/option"
+	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
 )
 
@@ -72,11 +73,13 @@ var _ = googleapi.Version
 var _ = errors.New
 var _ = strings.Replace
 var _ = context.Canceled
+var _ = internaloption.WithDefaultEndpoint
 
 const apiId = "bigtableadmin:v2"
 const apiName = "bigtableadmin"
 const apiVersion = "v2"
 const basePath = "https://bigtableadmin.googleapis.com/"
+const mtlsBasePath = "https://bigtableadmin.mtls.googleapis.com/"
 
 // OAuth2 scopes used by this API.
 const (
@@ -123,6 +126,8 @@ func NewService(ctx context.Context, opts ...option.ClientOption) (*Service, err
 	)
 	// NOTE: prepend, so we don't override user-specified scopes.
 	opts = append([]option.ClientOption{scopesOption}, opts...)
+	opts = append(opts, internaloption.WithDefaultEndpoint(basePath))
+	opts = append(opts, internaloption.WithDefaultMTLSEndpoint(mtlsBasePath))
 	client, endpoint, err := htransport.NewClient(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -246,10 +251,22 @@ type ProjectsInstancesAppProfilesService struct {
 
 func NewProjectsInstancesClustersService(s *Service) *ProjectsInstancesClustersService {
 	rs := &ProjectsInstancesClustersService{s: s}
+	rs.Backups = NewProjectsInstancesClustersBackupsService(s)
 	return rs
 }
 
 type ProjectsInstancesClustersService struct {
+	s *Service
+
+	Backups *ProjectsInstancesClustersBackupsService
+}
+
+func NewProjectsInstancesClustersBackupsService(s *Service) *ProjectsInstancesClustersBackupsService {
+	rs := &ProjectsInstancesClustersBackupsService{s: s}
+	return rs
+}
+
+type ProjectsInstancesClustersBackupsService struct {
 	s *Service
 }
 
@@ -275,7 +292,7 @@ type ProjectsLocationsService struct {
 // should treat traffic
 // from a particular end user application.
 type AppProfile struct {
-	// Description: Optional long form description of the use case for this
+	// Description: Long form description of the use case for this
 	// AppProfile.
 	Description string `json:"description,omitempty"`
 
@@ -297,10 +314,9 @@ type AppProfile struct {
 	// MultiClusterRoutingUseAny: Use a multi-cluster routing policy.
 	MultiClusterRoutingUseAny *MultiClusterRoutingUseAny `json:"multiClusterRoutingUseAny,omitempty"`
 
-	// Name: (`OutputOnly`)
-	// The unique name of the app profile. Values are of the
+	// Name: The unique name of the app profile. Values are of the
 	// form
-	// `projects/<project>/instances/<instance>/appProfiles/_a-zA-Z0-9*`
+	// `projects/{project}/instances/{instance}/appProfiles/_a-zA-Z0-9*`
 	// .
 	Name string `json:"name,omitempty"`
 
@@ -353,32 +369,32 @@ func (s *AppProfile) MarshalJSON() ([]byte, error) {
 //     {
 //       "audit_configs": [
 //         {
-//           "service": "allServices"
+//           "service": "allServices",
 //           "audit_log_configs": [
 //             {
 //               "log_type": "DATA_READ",
 //               "exempted_members": [
-//                 "user:foo@gmail.com"
+//                 "user:jose@example.com"
 //               ]
 //             },
 //             {
-//               "log_type": "DATA_WRITE",
+//               "log_type": "DATA_WRITE"
 //             },
 //             {
-//               "log_type": "ADMIN_READ",
+//               "log_type": "ADMIN_READ"
 //             }
 //           ]
 //         },
 //         {
-//           "service": "fooservice.googleapis.com"
+//           "service": "sampleservice.googleapis.com",
 //           "audit_log_configs": [
 //             {
-//               "log_type": "DATA_READ",
+//               "log_type": "DATA_READ"
 //             },
 //             {
 //               "log_type": "DATA_WRITE",
 //               "exempted_members": [
-//                 "user:bar@gmail.com"
+//                 "user:aliya@example.com"
 //               ]
 //             }
 //           ]
@@ -386,11 +402,11 @@ func (s *AppProfile) MarshalJSON() ([]byte, error) {
 //       ]
 //     }
 //
-// For fooservice, this policy enables DATA_READ, DATA_WRITE and
+// For sampleservice, this policy enables DATA_READ, DATA_WRITE and
 // ADMIN_READ
-// logging. It also exempts foo@gmail.com from DATA_READ logging,
+// logging. It also exempts jose@example.com from DATA_READ logging,
 // and
-// bar@gmail.com from DATA_WRITE logging.
+// aliya@example.com from DATA_WRITE logging.
 type AuditConfig struct {
 	// AuditLogConfigs: The configuration for logging of each type of
 	// permission.
@@ -436,18 +452,18 @@ func (s *AuditConfig) MarshalJSON() ([]byte, error) {
 //         {
 //           "log_type": "DATA_READ",
 //           "exempted_members": [
-//             "user:foo@gmail.com"
+//             "user:jose@example.com"
 //           ]
 //         },
 //         {
-//           "log_type": "DATA_WRITE",
+//           "log_type": "DATA_WRITE"
 //         }
 //       ]
 //     }
 //
 // This enables 'DATA_READ' and 'DATA_WRITE' logging, while
 // exempting
-// foo@gmail.com from DATA_READ logging.
+// jose@example.com from DATA_READ logging.
 type AuditLogConfig struct {
 	// ExemptedMembers: Specifies the identities that do not cause logging
 	// for this type of
@@ -491,11 +507,23 @@ func (s *AuditLogConfig) MarshalJSON() ([]byte, error) {
 // Binding: Associates `members` with a `role`.
 type Binding struct {
 	// Condition: The condition that is associated with this binding.
-	// NOTE: An unsatisfied condition will not allow user access via
-	// current
-	// binding. Different bindings, including their conditions, are
-	// examined
-	// independently.
+	//
+	// If the condition evaluates to `true`, then this binding applies to
+	// the
+	// current request.
+	//
+	// If the condition evaluates to `false`, then this binding does not
+	// apply to
+	// the current request. However, a different role binding might grant
+	// the same
+	// role to one or more of the members in this binding.
+	//
+	// To learn which resources support conditions in their IAM policies,
+	// see
+	// the
+	// [IAM
+	// documentation](https://cloud.google.com/iam/help/conditions/r
+	// esource-policies).
 	Condition *Expr `json:"condition,omitempty"`
 
 	// Members: Specifies the identities requesting access for a Cloud
@@ -512,7 +540,7 @@ type Binding struct {
 	//
 	// * `user:{emailid}`: An email address that represents a specific
 	// Google
-	//    account. For example, `alice@gmail.com` .
+	//    account. For example, `alice@example.com` .
 	//
 	//
 	// * `serviceAccount:{emailid}`: An email address that represents a
@@ -523,6 +551,38 @@ type Binding struct {
 	// * `group:{emailid}`: An email address that represents a Google
 	// group.
 	//    For example, `admins@example.com`.
+	//
+	// * `deleted:user:{emailid}?uid={uniqueid}`: An email address (plus
+	// unique
+	//    identifier) representing a user that has been recently deleted.
+	// For
+	//    example, `alice@example.com?uid=123456789012345678901`. If the
+	// user is
+	//    recovered, this value reverts to `user:{emailid}` and the
+	// recovered user
+	//    retains the role in the binding.
+	//
+	// * `deleted:serviceAccount:{emailid}?uid={uniqueid}`: An email address
+	// (plus
+	//    unique identifier) representing a service account that has been
+	// recently
+	//    deleted. For example,
+	//
+	// `my-other-app@appspot.gserviceaccount.com?uid=123456789012345678901`.
+	//
+	//    If the service account is undeleted, this value reverts to
+	//    `serviceAccount:{emailid}` and the undeleted service account
+	// retains the
+	//    role in the binding.
+	//
+	// * `deleted:group:{emailid}?uid={uniqueid}`: An email address (plus
+	// unique
+	//    identifier) representing a Google group that has been recently
+	//    deleted. For example,
+	// `admins@example.com?uid=123456789012345678901`. If
+	//    the group is recovered, this value reverts to `group:{emailid}`
+	// and the
+	//    recovered group retains the role in the binding.
 	//
 	//
 	// * `domain:{domain}`: The G Suite domain (primary) that represents all
@@ -564,8 +624,8 @@ func (s *Binding) MarshalJSON() ([]byte, error) {
 // for
 // google.bigtable.admin.v2.BigtableTableAdmin.CheckConsistency
 type CheckConsistencyRequest struct {
-	// ConsistencyToken: The token created using GenerateConsistencyToken
-	// for the Table.
+	// ConsistencyToken: Required. The token created using
+	// GenerateConsistencyToken for the Table.
 	ConsistencyToken string `json:"consistencyToken,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "ConsistencyToken") to
@@ -633,8 +693,8 @@ func (s *CheckConsistencyResponse) MarshalJSON() ([]byte, error) {
 // of serving all Tables in the parent
 // Instance.
 type Cluster struct {
-	// DefaultStorageType: (`CreationOnly`)
-	// The type of storage used by this cluster to serve its
+	// DefaultStorageType: Immutable. The type of storage used by this
+	// cluster to serve its
 	// parent instance's tables, unless explicitly overridden.
 	//
 	// Possible values:
@@ -644,29 +704,26 @@ type Cluster struct {
 	//   "HDD" - Magnetic drive (HDD) storage should be used.
 	DefaultStorageType string `json:"defaultStorageType,omitempty"`
 
-	// Location: (`CreationOnly`)
-	// The location where this cluster's nodes and storage reside. For
-	// best
+	// Location: Immutable. The location where this cluster's nodes and
+	// storage reside. For best
 	// performance, clients should be located as close as possible to
 	// this
 	// cluster. Currently only zones are supported, so values should be of
 	// the
-	// form `projects/<project>/locations/<zone>`.
+	// form `projects/{project}/locations/{zone}`.
 	Location string `json:"location,omitempty"`
 
-	// Name: (`OutputOnly`)
-	// The unique name of the cluster. Values are of the
+	// Name: The unique name of the cluster. Values are of the
 	// form
-	// `projects/<project>/instances/<instance>/clusters/a-z*`.
+	// `projects/{project}/instances/{instance}/clusters/a-z*`.
 	Name string `json:"name,omitempty"`
 
-	// ServeNodes: The number of nodes allocated to this cluster. More nodes
-	// enable higher
+	// ServeNodes: Required. The number of nodes allocated to this cluster.
+	// More nodes enable higher
 	// throughput and more consistent performance.
 	ServeNodes int64 `json:"serveNodes,omitempty"`
 
-	// State: (`OutputOnly`)
-	// The current state of the cluster.
+	// State: Output only. The current state of the cluster.
 	//
 	// Possible values:
 	//   "STATE_NOT_KNOWN" - The state of the cluster could not be
@@ -720,8 +777,8 @@ func (s *Cluster) MarshalJSON() ([]byte, error) {
 
 // ClusterState: The state of a table's data in a particular cluster.
 type ClusterState struct {
-	// ReplicationState: Output only.
-	// The state of replication for the table in this cluster.
+	// ReplicationState: Output only. The state of replication for the table
+	// in this cluster.
 	//
 	// Possible values:
 	//   "STATE_NOT_KNOWN" - The replication state of the table is unknown
@@ -859,21 +916,21 @@ func (s *CreateClusterMetadata) MarshalJSON() ([]byte, error) {
 // CreateClusterRequest: Request message for
 // BigtableInstanceAdmin.CreateCluster.
 type CreateClusterRequest struct {
-	// Cluster: The cluster to be created.
+	// Cluster: Required. The cluster to be created.
 	// Fields marked `OutputOnly` must be left blank.
 	Cluster *Cluster `json:"cluster,omitempty"`
 
-	// ClusterId: The ID to be used when referring to the new cluster within
-	// its instance,
+	// ClusterId: Required. The ID to be used when referring to the new
+	// cluster within its instance,
 	// e.g., just `mycluster` rather
 	// than
 	// `projects/myproject/instances/myinstance/clusters/mycluster`.
 	ClusterId string `json:"clusterId,omitempty"`
 
-	// Parent: The unique name of the instance in which to create the new
-	// cluster.
+	// Parent: Required. The unique name of the instance in which to create
+	// the new cluster.
 	// Values are of the form
-	// `projects/<project>/instances/<instance>`.
+	// `projects/{project}/instances/{instance}`.
 	Parent string `json:"parent,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Cluster") to
@@ -939,30 +996,30 @@ func (s *CreateInstanceMetadata) MarshalJSON() ([]byte, error) {
 // CreateInstanceRequest: Request message for
 // BigtableInstanceAdmin.CreateInstance.
 type CreateInstanceRequest struct {
-	// Clusters: The clusters to be created within the instance, mapped by
-	// desired
+	// Clusters: Required. The clusters to be created within the instance,
+	// mapped by desired
 	// cluster ID, e.g., just `mycluster` rather
 	// than
 	// `projects/myproject/instances/myinstance/clusters/mycluster`.
 	// Fie
 	// lds marked `OutputOnly` must be left blank.
-	// Currently, at most two clusters can be specified.
+	// Currently, at most four clusters can be specified.
 	Clusters map[string]Cluster `json:"clusters,omitempty"`
 
-	// Instance: The instance to create.
+	// Instance: Required. The instance to create.
 	// Fields marked `OutputOnly` must be left blank.
 	Instance *Instance `json:"instance,omitempty"`
 
-	// InstanceId: The ID to be used when referring to the new instance
-	// within its project,
+	// InstanceId: Required. The ID to be used when referring to the new
+	// instance within its project,
 	// e.g., just `myinstance` rather
 	// than
 	// `projects/myproject/instances/myinstance`.
 	InstanceId string `json:"instanceId,omitempty"`
 
-	// Parent: The unique name of the project in which to create the new
-	// instance.
-	// Values are of the form `projects/<project>`.
+	// Parent: Required. The unique name of the project in which to create
+	// the new instance.
+	// Values are of the form `projects/{project}`.
 	Parent string `json:"parent,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Clusters") to
@@ -1014,13 +1071,13 @@ type CreateTableRequest struct {
 	//     - Tablet 5 `[other, )                => {"other", "zz"}.`
 	InitialSplits []*Split `json:"initialSplits,omitempty"`
 
-	// Table: The Table to create.
+	// Table: Required. The Table to create.
 	Table *Table `json:"table,omitempty"`
 
-	// TableId: The name by which the new table should be referred to within
-	// the parent
+	// TableId: Required. The name by which the new table should be referred
+	// to within the parent
 	// instance, e.g., `foobar` rather than
-	// `<parent>/tables/foobar`.
+	// `{parent}/tables/foobar`.
 	// Maximum 50 characters.
 	TableId string `json:"tableId,omitempty"`
 
@@ -1103,31 +1160,62 @@ type Empty struct {
 	googleapi.ServerResponse `json:"-"`
 }
 
-// Expr: Represents an expression text. Example:
+// Expr: Represents a textual expression in the Common Expression
+// Language (CEL)
+// syntax. CEL is a C-like expression language. The syntax and semantics
+// of CEL
+// are documented at https://github.com/google/cel-spec.
 //
-//     title: "User account presence"
-//     description: "Determines whether the request has a user account"
-//     expression: "size(request.user) > 0"
+// Example (Comparison):
+//
+//     title: "Summary size limit"
+//     description: "Determines if a summary is less than 100 chars"
+//     expression: "document.summary.size() < 100"
+//
+// Example (Equality):
+//
+//     title: "Requestor is owner"
+//     description: "Determines if requestor is the document owner"
+//     expression: "document.owner ==
+// request.auth.claims.email"
+//
+// Example (Logic):
+//
+//     title: "Public documents"
+//     description: "Determine whether the document should be publicly
+// visible"
+//     expression: "document.type != 'private' && document.type !=
+// 'internal'"
+//
+// Example (Data Manipulation):
+//
+//     title: "Notification string"
+//     description: "Create a notification string with a timestamp."
+//     expression: "'New message received at ' +
+// string(document.create_time)"
+//
+// The exact variables and functions that may be referenced within an
+// expression
+// are determined by the service that evaluates it. See the
+// service
+// documentation for additional information.
 type Expr struct {
-	// Description: An optional description of the expression. This is a
+	// Description: Optional. Description of the expression. This is a
 	// longer text which
 	// describes the expression, e.g. when hovered over it in a UI.
 	Description string `json:"description,omitempty"`
 
-	// Expression: Textual representation of an expression in
-	// Common Expression Language syntax.
-	//
-	// The application context of the containing message determines
-	// which
-	// well-known feature set of CEL is supported.
+	// Expression: Textual representation of an expression in Common
+	// Expression Language
+	// syntax.
 	Expression string `json:"expression,omitempty"`
 
-	// Location: An optional string indicating the location of the
-	// expression for error
+	// Location: Optional. String indicating the location of the expression
+	// for error
 	// reporting, e.g. a file name and a position in the file.
 	Location string `json:"location,omitempty"`
 
-	// Title: An optional title for the expression, i.e. a short string
+	// Title: Optional. Title for the expression, i.e. a short string
 	// describing
 	// its purpose. This can be used e.g. in UIs which allow to enter
 	// the
@@ -1245,6 +1333,80 @@ func (s *GenerateConsistencyTokenResponse) MarshalJSON() ([]byte, error) {
 
 // GetIamPolicyRequest: Request message for `GetIamPolicy` method.
 type GetIamPolicyRequest struct {
+	// Options: OPTIONAL: A `GetPolicyOptions` object for specifying options
+	// to
+	// `GetIamPolicy`.
+	Options *GetPolicyOptions `json:"options,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Options") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Options") to include in
+	// API requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *GetIamPolicyRequest) MarshalJSON() ([]byte, error) {
+	type NoMethod GetIamPolicyRequest
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// GetPolicyOptions: Encapsulates settings provided to GetIamPolicy.
+type GetPolicyOptions struct {
+	// RequestedPolicyVersion: Optional. The policy format version to be
+	// returned.
+	//
+	// Valid values are 0, 1, and 3. Requests specifying an invalid value
+	// will be
+	// rejected.
+	//
+	// Requests for policies with any conditional bindings must specify
+	// version 3.
+	// Policies without any conditional bindings may specify any valid value
+	// or
+	// leave the field unset.
+	//
+	// To learn which resources support conditions in their IAM policies,
+	// see
+	// the
+	// [IAM
+	// documentation](https://cloud.google.com/iam/help/conditions/r
+	// esource-policies).
+	RequestedPolicyVersion int64 `json:"requestedPolicyVersion,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g.
+	// "RequestedPolicyVersion") to unconditionally include in API requests.
+	// By default, fields with empty values are omitted from API requests.
+	// However, any non-pointer, non-interface field appearing in
+	// ForceSendFields will be sent to the server regardless of whether the
+	// field is empty or not. This may be used to include empty fields in
+	// Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "RequestedPolicyVersion")
+	// to include in API requests with the JSON null value. By default,
+	// fields with empty values are omitted from API requests. However, any
+	// field with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *GetPolicyOptions) MarshalJSON() ([]byte, error) {
+	type NoMethod GetPolicyOptions
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
 // Instance: A collection of Bigtable Tables and
@@ -1252,13 +1414,13 @@ type GetIamPolicyRequest struct {
 // All tables in an instance are served from all
 // Clusters in the instance.
 type Instance struct {
-	// DisplayName: The descriptive name for this instance as it appears in
-	// UIs.
+	// DisplayName: Required. The descriptive name for this instance as it
+	// appears in UIs.
 	// Can be changed at any time, but should be kept globally unique
 	// to avoid confusion.
 	DisplayName string `json:"displayName,omitempty"`
 
-	// Labels: Labels are a flexible and lightweight mechanism for
+	// Labels: Required. Labels are a flexible and lightweight mechanism for
 	// organizing cloud
 	// resources into groups that reflect a customer's organizational needs
 	// and
@@ -1276,14 +1438,12 @@ type Instance struct {
 	// * Keys and values must both be under 128 bytes.
 	Labels map[string]string `json:"labels,omitempty"`
 
-	// Name: (`OutputOnly`)
-	// The unique name of the instance. Values are of the
+	// Name: The unique name of the instance. Values are of the
 	// form
-	// `projects/<project>/instances/a-z+[a-z0-9]`.
+	// `projects/{project}/instances/a-z+[a-z0-9]`.
 	Name string `json:"name,omitempty"`
 
-	// State: (`OutputOnly`)
-	// The current state of the instance.
+	// State: Output only. The current state of the instance.
 	//
 	// Possible values:
 	//   "STATE_NOT_KNOWN" - The state of the instance could not be
@@ -1296,7 +1456,7 @@ type Instance struct {
 	// if the creation process encounters an error.
 	State string `json:"state,omitempty"`
 
-	// Type: The type of the instance. Defaults to `PRODUCTION`.
+	// Type: Required. The type of the instance. Defaults to `PRODUCTION`.
 	//
 	// Possible values:
 	//   "TYPE_UNSPECIFIED" - The type of the instance is unspecified. If
@@ -1307,17 +1467,9 @@ type Instance struct {
 	//   "PRODUCTION" - An instance meant for production use. `serve_nodes`
 	// must be set
 	// on the cluster.
-	//   "DEVELOPMENT" - The instance is meant for development and testing
-	// purposes only; it has
-	// no performance or uptime guarantees and is not covered by SLA.
-	// After a development instance is created, it can be upgraded
-	// by
-	// updating the instance to type `PRODUCTION`. An instance created
-	// as a production instance cannot be changed to a development
-	// instance.
-	// When creating a development instance, `serve_nodes` on the cluster
-	// must
-	// not be set.
+	//   "DEVELOPMENT" - DEPRECATED: Prefer PRODUCTION for all use cases, as
+	// it no longer enforces
+	// a higher minimum node count than DEVELOPMENT.
 	Type string `json:"type,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
@@ -1733,8 +1885,8 @@ func (s *Modification) MarshalJSON() ([]byte, error) {
 // for
 // google.bigtable.admin.v2.BigtableTableAdmin.ModifyColumnFamilies
 type ModifyColumnFamiliesRequest struct {
-	// Modifications: Modifications to be atomically applied to the
-	// specified table's families.
+	// Modifications: Required. Modifications to be atomically applied to
+	// the specified table's families.
 	// Entries are applied in order, meaning that earlier modifications can
 	// be
 	// masked by later ones (in the case of repeated updates to the same
@@ -1856,11 +2008,11 @@ func (s *Operation) MarshalJSON() ([]byte, error) {
 // PartialUpdateInstanceRequest: Request message for
 // BigtableInstanceAdmin.PartialUpdateInstance.
 type PartialUpdateInstanceRequest struct {
-	// Instance: The Instance which will (partially) replace the current
-	// value.
+	// Instance: Required. The Instance which will (partially) replace the
+	// current value.
 	Instance *Instance `json:"instance,omitempty"`
 
-	// UpdateMask: The subset of Instance fields which should be
+	// UpdateMask: Required. The subset of Instance fields which should be
 	// replaced.
 	// Must be explicitly set.
 	UpdateMask string `json:"updateMask,omitempty"`
@@ -1888,63 +2040,97 @@ func (s *PartialUpdateInstanceRequest) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// Policy: Defines an Identity and Access Management (IAM) policy. It is
-// used to
-// specify access control policies for Cloud Platform resources.
+// Policy: An Identity and Access Management (IAM) policy, which
+// specifies access
+// controls for Google Cloud resources.
 //
 //
-// A `Policy` consists of a list of `bindings`. A `binding` binds a list
-// of
-// `members` to a `role`, where the members can be user accounts, Google
-// groups,
-// Google domains, and service accounts. A `role` is a named list of
-// permissions
-// defined by IAM.
+// A `Policy` is a collection of `bindings`. A `binding` binds one or
+// more
+// `members` to a single `role`. Members can be user accounts, service
+// accounts,
+// Google groups, and domains (such as G Suite). A `role` is a named
+// list of
+// permissions; each `role` can be an IAM predefined role or a
+// user-created
+// custom role.
 //
-// **JSON Example**
+// For some types of Google Cloud resources, a `binding` can also
+// specify a
+// `condition`, which is a logical expression that allows access to a
+// resource
+// only if the expression evaluates to `true`. A condition can add
+// constraints
+// based on attributes of the request, the resource, or both. To learn
+// which
+// resources support conditions in their IAM policies, see the
+// [IAM
+// documentation](https://cloud.google.com/iam/help/conditions/resource-p
+// olicies).
+//
+// **JSON example:**
 //
 //     {
 //       "bindings": [
 //         {
-//           "role": "roles/owner",
+//           "role": "roles/resourcemanager.organizationAdmin",
 //           "members": [
 //             "user:mike@example.com",
 //             "group:admins@example.com",
 //             "domain:google.com",
 //
-// "serviceAccount:my-other-app@appspot.gserviceaccount.com"
+// "serviceAccount:my-project-id@appspot.gserviceaccount.com"
 //           ]
 //         },
 //         {
-//           "role": "roles/viewer",
-//           "members": ["user:sean@example.com"]
+//           "role": "roles/resourcemanager.organizationViewer",
+//           "members": [
+//             "user:eve@example.com"
+//           ],
+//           "condition": {
+//             "title": "expirable access",
+//             "description": "Does not grant access after Sep 2020",
+//             "expression": "request.time <
+// timestamp('2020-10-01T00:00:00.000Z')",
+//           }
 //         }
-//       ]
+//       ],
+//       "etag": "BwWWja0YfJA=",
+//       "version": 3
 //     }
 //
-// **YAML Example**
+// **YAML example:**
 //
 //     bindings:
 //     - members:
 //       - user:mike@example.com
 //       - group:admins@example.com
 //       - domain:google.com
-//       - serviceAccount:my-other-app@appspot.gserviceaccount.com
-//       role: roles/owner
+//       - serviceAccount:my-project-id@appspot.gserviceaccount.com
+//       role: roles/resourcemanager.organizationAdmin
 //     - members:
-//       - user:sean@example.com
-//       role: roles/viewer
-//
+//       - user:eve@example.com
+//       role: roles/resourcemanager.organizationViewer
+//       condition:
+//         title: expirable access
+//         description: Does not grant access after Sep 2020
+//         expression: request.time <
+// timestamp('2020-10-01T00:00:00.000Z')
+//     - etag: BwWWja0YfJA=
+//     - version: 3
 //
 // For a description of IAM and its features, see the
-// [IAM developer's guide](https://cloud.google.com/iam/docs).
+// [IAM documentation](https://cloud.google.com/iam/docs/).
 type Policy struct {
 	// AuditConfigs: Specifies cloud audit logging configuration for this
 	// policy.
 	AuditConfigs []*AuditConfig `json:"auditConfigs,omitempty"`
 
-	// Bindings: Associates a list of `members` to a `role`.
-	// `bindings` with no members will result in an error.
+	// Bindings: Associates a list of `members` to a `role`. Optionally, may
+	// specify a
+	// `condition` that determines how and when the `bindings` are applied.
+	// Each
+	// of the `bindings` must contain at least one member.
 	Bindings []*Binding `json:"bindings,omitempty"`
 
 	// Etag: `etag` is used for optimistic concurrency control as a way to
@@ -1962,12 +2148,49 @@ type Policy struct {
 	// ensure that their change will be applied to the same version of the
 	// policy.
 	//
-	// If no `etag` is provided in the call to `setIamPolicy`, then the
-	// existing
-	// policy is overwritten blindly.
+	// **Important:** If you use IAM Conditions, you must include the `etag`
+	// field
+	// whenever you call `setIamPolicy`. If you omit this field, then IAM
+	// allows
+	// you to overwrite a version `3` policy with a version `1` policy, and
+	// all of
+	// the conditions in the version `3` policy are lost.
 	Etag string `json:"etag,omitempty"`
 
-	// Version: Deprecated.
+	// Version: Specifies the format of the policy.
+	//
+	// Valid values are `0`, `1`, and `3`. Requests that specify an invalid
+	// value
+	// are rejected.
+	//
+	// Any operation that affects conditional role bindings must specify
+	// version
+	// `3`. This requirement applies to the following operations:
+	//
+	// * Getting a policy that includes a conditional role binding
+	// * Adding a conditional role binding to a policy
+	// * Changing a conditional role binding in a policy
+	// * Removing any role binding, with or without a condition, from a
+	// policy
+	//   that includes conditions
+	//
+	// **Important:** If you use IAM Conditions, you must include the `etag`
+	// field
+	// whenever you call `setIamPolicy`. If you omit this field, then IAM
+	// allows
+	// you to overwrite a version `3` policy with a version `1` policy, and
+	// all of
+	// the conditions in the version `3` policy are lost.
+	//
+	// If a policy does not include any conditions, operations on that
+	// policy may
+	// specify any valid version or leave the field unset.
+	//
+	// To learn which resources support conditions in their IAM policies,
+	// see the
+	// [IAM
+	// documentation](https://cloud.google.com/iam/help/conditions/resource-p
+	// olicies).
 	Version int64 `json:"version,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
@@ -2012,8 +2235,8 @@ type SetIamPolicyRequest struct {
 	// the fields in the mask will be modified. If no mask is provided,
 	// the
 	// following default mask is used:
-	// paths: "bindings, etag"
-	// This field is only used by Cloud IAM.
+	//
+	// `paths: "bindings, etag"
 	UpdateMask string `json:"updateMask,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Policy") to
@@ -2164,8 +2387,8 @@ func (s *Status) MarshalJSON() ([]byte, error) {
 // timestamp.
 // Each table is served using the resources of its parent cluster.
 type Table struct {
-	// ClusterStates: Output only.
-	// Map from cluster ID to per-cluster table state.
+	// ClusterStates: Output only. Map from cluster ID to per-cluster table
+	// state.
 	// If it could not be determined whether or not the table has data in
 	// a
 	// particular cluster (for example, if its zone is unavailable),
@@ -2175,17 +2398,14 @@ type Table struct {
 	// Views: `REPLICATION_VIEW`, `FULL`
 	ClusterStates map[string]ClusterState `json:"clusterStates,omitempty"`
 
-	// ColumnFamilies: (`CreationOnly`)
-	// The column families configured for this table, mapped by column
-	// family ID.
+	// ColumnFamilies: The column families configured for this table, mapped
+	// by column family ID.
 	// Views: `SCHEMA_VIEW`, `FULL`
 	ColumnFamilies map[string]ColumnFamily `json:"columnFamilies,omitempty"`
 
-	// Granularity: (`CreationOnly`)
-	// The granularity (i.e. `MILLIS`) at which timestamps are stored
-	// in
-	// this table. Timestamps not matching the granularity will be
-	// rejected.
+	// Granularity: Immutable. The granularity (i.e. `MILLIS`) at which
+	// timestamps are stored in this
+	// table. Timestamps not matching the granularity will be rejected.
 	// If unspecified at creation time, the value will be set to
 	// `MILLIS`.
 	// Views: `SCHEMA_VIEW`, `FULL`.
@@ -2197,10 +2417,9 @@ type Table struct {
 	//   "MILLIS" - The table keeps data versioned at a granularity of 1ms.
 	Granularity string `json:"granularity,omitempty"`
 
-	// Name: Output only.
-	// The unique name of the table. Values are of the
+	// Name: The unique name of the table. Values are of the
 	// form
-	// `projects/<project>/instances/<instance>/tables/_a-zA-Z0-9*`.
+	// `projects/{project}/instances/{instance}/tables/_a-zA-Z0-9*`.
 	// Vie
 	// ws: `NAME_ONLY`, `SCHEMA_VIEW`, `REPLICATION_VIEW`, `FULL`
 	Name string `json:"name,omitempty"`
@@ -2520,7 +2739,7 @@ func (c *OperationsCancelCall) Header() http.Header {
 
 func (c *OperationsCancelCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2590,7 +2809,7 @@ func (c *OperationsCancelCall) Do(opts ...googleapi.CallOption) (*Empty, error) 
 	//     "name": {
 	//       "description": "The name of the operation resource to be cancelled.",
 	//       "location": "path",
-	//       "pattern": "^operations/.+$",
+	//       "pattern": "^operations/.*$",
 	//       "required": true,
 	//       "type": "string"
 	//     }
@@ -2661,7 +2880,7 @@ func (c *OperationsDeleteCall) Header() http.Header {
 
 func (c *OperationsDeleteCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2731,7 +2950,7 @@ func (c *OperationsDeleteCall) Do(opts ...googleapi.CallOption) (*Empty, error) 
 	//     "name": {
 	//       "description": "The name of the operation resource to be deleted.",
 	//       "location": "path",
-	//       "pattern": "^operations/.+$",
+	//       "pattern": "^operations/.*$",
 	//       "required": true,
 	//       "type": "string"
 	//     }
@@ -2811,7 +3030,7 @@ func (c *OperationsGetCall) Header() http.Header {
 
 func (c *OperationsGetCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2884,7 +3103,7 @@ func (c *OperationsGetCall) Do(opts ...googleapi.CallOption) (*Operation, error)
 	//     "name": {
 	//       "description": "The name of the operation resource.",
 	//       "location": "path",
-	//       "pattern": "^operations/.+$",
+	//       "pattern": "^operations/.*$",
 	//       "required": true,
 	//       "type": "string"
 	//     }
@@ -2998,7 +3217,7 @@ func (c *OperationsProjectsOperationsListCall) Header() http.Header {
 
 func (c *OperationsProjectsOperationsListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3076,7 +3295,7 @@ func (c *OperationsProjectsOperationsListCall) Do(opts ...googleapi.CallOption) 
 	//     "name": {
 	//       "description": "The name of the operation's parent resource.",
 	//       "location": "path",
-	//       "pattern": "^operations/projects/.+$",
+	//       "pattern": "^operations/projects/.*$",
 	//       "required": true,
 	//       "type": "string"
 	//     },
@@ -3176,7 +3395,7 @@ func (c *ProjectsInstancesCreateCall) Header() http.Header {
 
 func (c *ProjectsInstancesCreateCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3249,7 +3468,7 @@ func (c *ProjectsInstancesCreateCall) Do(opts ...googleapi.CallOption) (*Operati
 	//   ],
 	//   "parameters": {
 	//     "parent": {
-	//       "description": "The unique name of the project in which to create the new instance.\nValues are of the form `projects/\u003cproject\u003e`.",
+	//       "description": "Required. The unique name of the project in which to create the new instance.\nValues are of the form `projects/{project}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+$",
 	//       "required": true,
@@ -3319,7 +3538,7 @@ func (c *ProjectsInstancesDeleteCall) Header() http.Header {
 
 func (c *ProjectsInstancesDeleteCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3387,7 +3606,7 @@ func (c *ProjectsInstancesDeleteCall) Do(opts ...googleapi.CallOption) (*Empty, 
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The unique name of the instance to be deleted.\nValues are of the form `projects/\u003cproject\u003e/instances/\u003cinstance\u003e`.",
+	//       "description": "Required. The unique name of the instance to be deleted.\nValues are of the form `projects/{project}/instances/{instance}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+$",
 	//       "required": true,
@@ -3465,7 +3684,7 @@ func (c *ProjectsInstancesGetCall) Header() http.Header {
 
 func (c *ProjectsInstancesGetCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3536,7 +3755,7 @@ func (c *ProjectsInstancesGetCall) Do(opts ...googleapi.CallOption) (*Instance, 
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The unique name of the requested instance. Values are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e`.",
+	//       "description": "Required. The unique name of the requested instance. Values are of the form\n`projects/{project}/instances/{instance}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+$",
 	//       "required": true,
@@ -3608,7 +3827,7 @@ func (c *ProjectsInstancesGetIamPolicyCall) Header() http.Header {
 
 func (c *ProjectsInstancesGetIamPolicyCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3769,7 +3988,7 @@ func (c *ProjectsInstancesListCall) Header() http.Header {
 
 func (c *ProjectsInstancesListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3845,7 +4064,7 @@ func (c *ProjectsInstancesListCall) Do(opts ...googleapi.CallOption) (*ListInsta
 	//       "type": "string"
 	//     },
 	//     "parent": {
-	//       "description": "The unique name of the project for which a list of instances is requested.\nValues are of the form `projects/\u003cproject\u003e`.",
+	//       "description": "Required. The unique name of the project for which a list of instances is requested.\nValues are of the form `projects/{project}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+$",
 	//       "required": true,
@@ -3911,8 +4130,8 @@ func (r *ProjectsInstancesService) PartialUpdateInstance(name string, instance *
 	return c
 }
 
-// UpdateMask sets the optional parameter "updateMask": The subset of
-// Instance fields which should be replaced.
+// UpdateMask sets the optional parameter "updateMask": Required. The
+// subset of Instance fields which should be replaced.
 // Must be explicitly set.
 func (c *ProjectsInstancesPartialUpdateInstanceCall) UpdateMask(updateMask string) *ProjectsInstancesPartialUpdateInstanceCall {
 	c.urlParams_.Set("updateMask", updateMask)
@@ -3946,7 +4165,7 @@ func (c *ProjectsInstancesPartialUpdateInstanceCall) Header() http.Header {
 
 func (c *ProjectsInstancesPartialUpdateInstanceCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4019,14 +4238,14 @@ func (c *ProjectsInstancesPartialUpdateInstanceCall) Do(opts ...googleapi.CallOp
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "(`OutputOnly`)\nThe unique name of the instance. Values are of the form\n`projects/\u003cproject\u003e/instances/a-z+[a-z0-9]`.",
+	//       "description": "The unique name of the instance. Values are of the form\n`projects/{project}/instances/a-z+[a-z0-9]`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+$",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "updateMask": {
-	//       "description": "The subset of Instance fields which should be replaced.\nMust be explicitly set.",
+	//       "description": "Required. The subset of Instance fields which should be replaced.\nMust be explicitly set.",
 	//       "format": "google-fieldmask",
 	//       "location": "query",
 	//       "type": "string"
@@ -4099,7 +4318,7 @@ func (c *ProjectsInstancesSetIamPolicyCall) Header() http.Header {
 
 func (c *ProjectsInstancesSetIamPolicyCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4245,7 +4464,7 @@ func (c *ProjectsInstancesTestIamPermissionsCall) Header() http.Header {
 
 func (c *ProjectsInstancesTestIamPermissionsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4394,7 +4613,7 @@ func (c *ProjectsInstancesUpdateCall) Header() http.Header {
 
 func (c *ProjectsInstancesUpdateCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4467,7 +4686,7 @@ func (c *ProjectsInstancesUpdateCall) Do(opts ...googleapi.CallOption) (*Instanc
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "(`OutputOnly`)\nThe unique name of the instance. Values are of the form\n`projects/\u003cproject\u003e/instances/a-z+[a-z0-9]`.",
+	//       "description": "The unique name of the instance. Values are of the form\n`projects/{project}/instances/a-z+[a-z0-9]`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+$",
 	//       "required": true,
@@ -4512,8 +4731,9 @@ func (r *ProjectsInstancesAppProfilesService) Create(parent string, appprofile *
 	return c
 }
 
-// AppProfileId sets the optional parameter "appProfileId": The ID to be
-// used when referring to the new app profile within its
+// AppProfileId sets the optional parameter "appProfileId": Required.
+// The ID to be used when referring to the new app profile within
+// its
 // instance, e.g., just `myprofile` rather
 // than
 // `projects/myproject/instances/myinstance/appProfiles/myprofile`.
@@ -4556,7 +4776,7 @@ func (c *ProjectsInstancesAppProfilesCreateCall) Header() http.Header {
 
 func (c *ProjectsInstancesAppProfilesCreateCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4629,7 +4849,7 @@ func (c *ProjectsInstancesAppProfilesCreateCall) Do(opts ...googleapi.CallOption
 	//   ],
 	//   "parameters": {
 	//     "appProfileId": {
-	//       "description": "The ID to be used when referring to the new app profile within its\ninstance, e.g., just `myprofile` rather than\n`projects/myproject/instances/myinstance/appProfiles/myprofile`.",
+	//       "description": "Required. The ID to be used when referring to the new app profile within its\ninstance, e.g., just `myprofile` rather than\n`projects/myproject/instances/myinstance/appProfiles/myprofile`.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -4639,7 +4859,7 @@ func (c *ProjectsInstancesAppProfilesCreateCall) Do(opts ...googleapi.CallOption
 	//       "type": "boolean"
 	//     },
 	//     "parent": {
-	//       "description": "The unique name of the instance in which to create the new app profile.\nValues are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e`.",
+	//       "description": "Required. The unique name of the instance in which to create the new app profile.\nValues are of the form\n`projects/{project}/instances/{instance}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+$",
 	//       "required": true,
@@ -4682,8 +4902,9 @@ func (r *ProjectsInstancesAppProfilesService) Delete(name string) *ProjectsInsta
 	return c
 }
 
-// IgnoreWarnings sets the optional parameter "ignoreWarnings": If true,
-// ignore safety checks when deleting the app profile.
+// IgnoreWarnings sets the optional parameter "ignoreWarnings":
+// Required. If true, ignore safety checks when deleting the app
+// profile.
 func (c *ProjectsInstancesAppProfilesDeleteCall) IgnoreWarnings(ignoreWarnings bool) *ProjectsInstancesAppProfilesDeleteCall {
 	c.urlParams_.Set("ignoreWarnings", fmt.Sprint(ignoreWarnings))
 	return c
@@ -4716,7 +4937,7 @@ func (c *ProjectsInstancesAppProfilesDeleteCall) Header() http.Header {
 
 func (c *ProjectsInstancesAppProfilesDeleteCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4784,12 +5005,12 @@ func (c *ProjectsInstancesAppProfilesDeleteCall) Do(opts ...googleapi.CallOption
 	//   ],
 	//   "parameters": {
 	//     "ignoreWarnings": {
-	//       "description": "If true, ignore safety checks when deleting the app profile.",
+	//       "description": "Required. If true, ignore safety checks when deleting the app profile.",
 	//       "location": "query",
 	//       "type": "boolean"
 	//     },
 	//     "name": {
-	//       "description": "The unique name of the app profile to be deleted. Values are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e/appProfiles/\u003capp_profile\u003e`.",
+	//       "description": "Required. The unique name of the app profile to be deleted. Values are of the form\n`projects/{project}/instances/{instance}/appProfiles/{app_profile}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+/appProfiles/[^/]+$",
 	//       "required": true,
@@ -4867,7 +5088,7 @@ func (c *ProjectsInstancesAppProfilesGetCall) Header() http.Header {
 
 func (c *ProjectsInstancesAppProfilesGetCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4938,7 +5159,7 @@ func (c *ProjectsInstancesAppProfilesGetCall) Do(opts ...googleapi.CallOption) (
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The unique name of the requested app profile. Values are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e/appProfiles/\u003capp_profile\u003e`.",
+	//       "description": "Required. The unique name of the requested app profile. Values are of the form\n`projects/{project}/instances/{instance}/appProfiles/{app_profile}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+/appProfiles/[^/]+$",
 	//       "required": true,
@@ -5043,7 +5264,7 @@ func (c *ProjectsInstancesAppProfilesListCall) Header() http.Header {
 
 func (c *ProjectsInstancesAppProfilesListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5125,7 +5346,7 @@ func (c *ProjectsInstancesAppProfilesListCall) Do(opts ...googleapi.CallOption) 
 	//       "type": "string"
 	//     },
 	//     "parent": {
-	//       "description": "The unique name of the instance for which a list of app profiles is\nrequested. Values are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e`.\nUse `\u003cinstance\u003e = '-'` to list AppProfiles for all Instances in a project,\ne.g., `projects/myproject/instances/-`.",
+	//       "description": "Required. The unique name of the instance for which a list of app profiles is\nrequested. Values are of the form\n`projects/{project}/instances/{instance}`.\nUse `{instance} = '-'` to list AppProfiles for all Instances in a project,\ne.g., `projects/myproject/instances/-`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+$",
 	//       "required": true,
@@ -5195,8 +5416,8 @@ func (c *ProjectsInstancesAppProfilesPatchCall) IgnoreWarnings(ignoreWarnings bo
 	return c
 }
 
-// UpdateMask sets the optional parameter "updateMask": The subset of
-// app profile fields which should be replaced.
+// UpdateMask sets the optional parameter "updateMask": Required. The
+// subset of app profile fields which should be replaced.
 // If unset, all fields will be replaced.
 func (c *ProjectsInstancesAppProfilesPatchCall) UpdateMask(updateMask string) *ProjectsInstancesAppProfilesPatchCall {
 	c.urlParams_.Set("updateMask", updateMask)
@@ -5230,7 +5451,7 @@ func (c *ProjectsInstancesAppProfilesPatchCall) Header() http.Header {
 
 func (c *ProjectsInstancesAppProfilesPatchCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5308,14 +5529,14 @@ func (c *ProjectsInstancesAppProfilesPatchCall) Do(opts ...googleapi.CallOption)
 	//       "type": "boolean"
 	//     },
 	//     "name": {
-	//       "description": "(`OutputOnly`)\nThe unique name of the app profile. Values are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e/appProfiles/_a-zA-Z0-9*`.",
+	//       "description": "The unique name of the app profile. Values are of the form\n`projects/{project}/instances/{instance}/appProfiles/_a-zA-Z0-9*`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+/appProfiles/[^/]+$",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "updateMask": {
-	//       "description": "The subset of app profile fields which should be replaced.\nIf unset, all fields will be replaced.",
+	//       "description": "Required. The subset of app profile fields which should be replaced.\nIf unset, all fields will be replaced.",
 	//       "format": "google-fieldmask",
 	//       "location": "query",
 	//       "type": "string"
@@ -5359,8 +5580,9 @@ func (r *ProjectsInstancesClustersService) Create(parent string, cluster *Cluste
 	return c
 }
 
-// ClusterId sets the optional parameter "clusterId": The ID to be used
-// when referring to the new cluster within its instance,
+// ClusterId sets the optional parameter "clusterId": Required. The ID
+// to be used when referring to the new cluster within its
+// instance,
 // e.g., just `mycluster` rather
 // than
 // `projects/myproject/instances/myinstance/clusters/mycluster`.
@@ -5396,7 +5618,7 @@ func (c *ProjectsInstancesClustersCreateCall) Header() http.Header {
 
 func (c *ProjectsInstancesClustersCreateCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5469,12 +5691,12 @@ func (c *ProjectsInstancesClustersCreateCall) Do(opts ...googleapi.CallOption) (
 	//   ],
 	//   "parameters": {
 	//     "clusterId": {
-	//       "description": "The ID to be used when referring to the new cluster within its instance,\ne.g., just `mycluster` rather than\n`projects/myproject/instances/myinstance/clusters/mycluster`.",
+	//       "description": "Required. The ID to be used when referring to the new cluster within its instance,\ne.g., just `mycluster` rather than\n`projects/myproject/instances/myinstance/clusters/mycluster`.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "parent": {
-	//       "description": "The unique name of the instance in which to create the new cluster.\nValues are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e`.",
+	//       "description": "Required. The unique name of the instance in which to create the new cluster.\nValues are of the form\n`projects/{project}/instances/{instance}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+$",
 	//       "required": true,
@@ -5544,7 +5766,7 @@ func (c *ProjectsInstancesClustersDeleteCall) Header() http.Header {
 
 func (c *ProjectsInstancesClustersDeleteCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5612,7 +5834,7 @@ func (c *ProjectsInstancesClustersDeleteCall) Do(opts ...googleapi.CallOption) (
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The unique name of the cluster to be deleted. Values are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e/clusters/\u003ccluster\u003e`.",
+	//       "description": "Required. The unique name of the cluster to be deleted. Values are of the form\n`projects/{project}/instances/{instance}/clusters/{cluster}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+/clusters/[^/]+$",
 	//       "required": true,
@@ -5690,7 +5912,7 @@ func (c *ProjectsInstancesClustersGetCall) Header() http.Header {
 
 func (c *ProjectsInstancesClustersGetCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5761,7 +5983,7 @@ func (c *ProjectsInstancesClustersGetCall) Do(opts ...googleapi.CallOption) (*Cl
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The unique name of the requested cluster. Values are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e/clusters/\u003ccluster\u003e`.",
+	//       "description": "Required. The unique name of the requested cluster. Values are of the form\n`projects/{project}/instances/{instance}/clusters/{cluster}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+/clusters/[^/]+$",
 	//       "required": true,
@@ -5847,7 +6069,7 @@ func (c *ProjectsInstancesClustersListCall) Header() http.Header {
 
 func (c *ProjectsInstancesClustersListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5923,7 +6145,7 @@ func (c *ProjectsInstancesClustersListCall) Do(opts ...googleapi.CallOption) (*L
 	//       "type": "string"
 	//     },
 	//     "parent": {
-	//       "description": "The unique name of the instance for which a list of clusters is requested.\nValues are of the form `projects/\u003cproject\u003e/instances/\u003cinstance\u003e`.\nUse `\u003cinstance\u003e = '-'` to list Clusters for all Instances in a project,\ne.g., `projects/myproject/instances/-`.",
+	//       "description": "Required. The unique name of the instance for which a list of clusters is requested.\nValues are of the form `projects/{project}/instances/{instance}`.\nUse `{instance} = '-'` to list Clusters for all Instances in a project,\ne.g., `projects/myproject/instances/-`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+$",
 	//       "required": true,
@@ -6014,7 +6236,7 @@ func (c *ProjectsInstancesClustersUpdateCall) Header() http.Header {
 
 func (c *ProjectsInstancesClustersUpdateCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -6087,7 +6309,7 @@ func (c *ProjectsInstancesClustersUpdateCall) Do(opts ...googleapi.CallOption) (
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "(`OutputOnly`)\nThe unique name of the cluster. Values are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e/clusters/a-z*`.",
+	//       "description": "The unique name of the cluster. Values are of the form\n`projects/{project}/instances/{instance}/clusters/a-z*`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+/clusters/[^/]+$",
 	//       "required": true,
@@ -6107,6 +6329,445 @@ func (c *ProjectsInstancesClustersUpdateCall) Do(opts ...googleapi.CallOption) (
 	//     "https://www.googleapis.com/auth/bigtable.admin.instance",
 	//     "https://www.googleapis.com/auth/cloud-bigtable.admin",
 	//     "https://www.googleapis.com/auth/cloud-bigtable.admin.cluster",
+	//     "https://www.googleapis.com/auth/cloud-platform"
+	//   ]
+	// }
+
+}
+
+// method id "bigtableadmin.projects.instances.clusters.backups.getIamPolicy":
+
+type ProjectsInstancesClustersBackupsGetIamPolicyCall struct {
+	s                   *Service
+	resource            string
+	getiampolicyrequest *GetIamPolicyRequest
+	urlParams_          gensupport.URLParams
+	ctx_                context.Context
+	header_             http.Header
+}
+
+// GetIamPolicy: Gets the access control policy for a Table
+// resource.
+// Returns an empty policy if the resource exists but does not have a
+// policy
+// set.
+func (r *ProjectsInstancesClustersBackupsService) GetIamPolicy(resource string, getiampolicyrequest *GetIamPolicyRequest) *ProjectsInstancesClustersBackupsGetIamPolicyCall {
+	c := &ProjectsInstancesClustersBackupsGetIamPolicyCall{s: r.s, urlParams_: make(gensupport.URLParams)}
+	c.resource = resource
+	c.getiampolicyrequest = getiampolicyrequest
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *ProjectsInstancesClustersBackupsGetIamPolicyCall) Fields(s ...googleapi.Field) *ProjectsInstancesClustersBackupsGetIamPolicyCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *ProjectsInstancesClustersBackupsGetIamPolicyCall) Context(ctx context.Context) *ProjectsInstancesClustersBackupsGetIamPolicyCall {
+	c.ctx_ = ctx
+	return c
+}
+
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *ProjectsInstancesClustersBackupsGetIamPolicyCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
+func (c *ProjectsInstancesClustersBackupsGetIamPolicyCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.getiampolicyrequest)
+	if err != nil {
+		return nil, err
+	}
+	reqHeaders.Set("Content-Type", "application/json")
+	c.urlParams_.Set("alt", alt)
+	c.urlParams_.Set("prettyPrint", "false")
+	urls := googleapi.ResolveRelative(c.s.BasePath, "v2/{+resource}:getIamPolicy")
+	urls += "?" + c.urlParams_.Encode()
+	req, err := http.NewRequest("POST", urls, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header = reqHeaders
+	googleapi.Expand(req.URL, map[string]string{
+		"resource": c.resource,
+	})
+	return gensupport.SendRequest(c.ctx_, c.s.client, req)
+}
+
+// Do executes the "bigtableadmin.projects.instances.clusters.backups.getIamPolicy" call.
+// Exactly one of *Policy or error will be non-nil. Any non-2xx status
+// code is an error. Response headers are in either
+// *Policy.ServerResponse.Header or (if a response was returned at all)
+// in error.(*googleapi.Error).Header. Use googleapi.IsNotModified to
+// check whether the returned error was because http.StatusNotModified
+// was returned.
+func (c *ProjectsInstancesClustersBackupsGetIamPolicyCall) Do(opts ...googleapi.CallOption) (*Policy, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if res != nil && res.StatusCode == http.StatusNotModified {
+		if res.Body != nil {
+			res.Body.Close()
+		}
+		return nil, &googleapi.Error{
+			Code:   res.StatusCode,
+			Header: res.Header,
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	ret := &Policy{
+		ServerResponse: googleapi.ServerResponse{
+			Header:         res.Header,
+			HTTPStatusCode: res.StatusCode,
+		},
+	}
+	target := &ret
+	if err := gensupport.DecodeResponse(target, res); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Gets the access control policy for a Table resource.\nReturns an empty policy if the resource exists but does not have a policy\nset.",
+	//   "flatPath": "v2/projects/{projectsId}/instances/{instancesId}/clusters/{clustersId}/backups/{backupsId}:getIamPolicy",
+	//   "httpMethod": "POST",
+	//   "id": "bigtableadmin.projects.instances.clusters.backups.getIamPolicy",
+	//   "parameterOrder": [
+	//     "resource"
+	//   ],
+	//   "parameters": {
+	//     "resource": {
+	//       "description": "REQUIRED: The resource for which the policy is being requested.\nSee the operation documentation for the appropriate value for this field.",
+	//       "location": "path",
+	//       "pattern": "^projects/[^/]+/instances/[^/]+/clusters/[^/]+/backups/[^/]+$",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "v2/{+resource}:getIamPolicy",
+	//   "request": {
+	//     "$ref": "GetIamPolicyRequest"
+	//   },
+	//   "response": {
+	//     "$ref": "Policy"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/bigtable.admin",
+	//     "https://www.googleapis.com/auth/bigtable.admin.table",
+	//     "https://www.googleapis.com/auth/cloud-bigtable.admin",
+	//     "https://www.googleapis.com/auth/cloud-bigtable.admin.table",
+	//     "https://www.googleapis.com/auth/cloud-platform"
+	//   ]
+	// }
+
+}
+
+// method id "bigtableadmin.projects.instances.clusters.backups.setIamPolicy":
+
+type ProjectsInstancesClustersBackupsSetIamPolicyCall struct {
+	s                   *Service
+	resource            string
+	setiampolicyrequest *SetIamPolicyRequest
+	urlParams_          gensupport.URLParams
+	ctx_                context.Context
+	header_             http.Header
+}
+
+// SetIamPolicy: Sets the access control policy on a Table
+// resource.
+// Replaces any existing policy.
+func (r *ProjectsInstancesClustersBackupsService) SetIamPolicy(resource string, setiampolicyrequest *SetIamPolicyRequest) *ProjectsInstancesClustersBackupsSetIamPolicyCall {
+	c := &ProjectsInstancesClustersBackupsSetIamPolicyCall{s: r.s, urlParams_: make(gensupport.URLParams)}
+	c.resource = resource
+	c.setiampolicyrequest = setiampolicyrequest
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *ProjectsInstancesClustersBackupsSetIamPolicyCall) Fields(s ...googleapi.Field) *ProjectsInstancesClustersBackupsSetIamPolicyCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *ProjectsInstancesClustersBackupsSetIamPolicyCall) Context(ctx context.Context) *ProjectsInstancesClustersBackupsSetIamPolicyCall {
+	c.ctx_ = ctx
+	return c
+}
+
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *ProjectsInstancesClustersBackupsSetIamPolicyCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
+func (c *ProjectsInstancesClustersBackupsSetIamPolicyCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.setiampolicyrequest)
+	if err != nil {
+		return nil, err
+	}
+	reqHeaders.Set("Content-Type", "application/json")
+	c.urlParams_.Set("alt", alt)
+	c.urlParams_.Set("prettyPrint", "false")
+	urls := googleapi.ResolveRelative(c.s.BasePath, "v2/{+resource}:setIamPolicy")
+	urls += "?" + c.urlParams_.Encode()
+	req, err := http.NewRequest("POST", urls, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header = reqHeaders
+	googleapi.Expand(req.URL, map[string]string{
+		"resource": c.resource,
+	})
+	return gensupport.SendRequest(c.ctx_, c.s.client, req)
+}
+
+// Do executes the "bigtableadmin.projects.instances.clusters.backups.setIamPolicy" call.
+// Exactly one of *Policy or error will be non-nil. Any non-2xx status
+// code is an error. Response headers are in either
+// *Policy.ServerResponse.Header or (if a response was returned at all)
+// in error.(*googleapi.Error).Header. Use googleapi.IsNotModified to
+// check whether the returned error was because http.StatusNotModified
+// was returned.
+func (c *ProjectsInstancesClustersBackupsSetIamPolicyCall) Do(opts ...googleapi.CallOption) (*Policy, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if res != nil && res.StatusCode == http.StatusNotModified {
+		if res.Body != nil {
+			res.Body.Close()
+		}
+		return nil, &googleapi.Error{
+			Code:   res.StatusCode,
+			Header: res.Header,
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	ret := &Policy{
+		ServerResponse: googleapi.ServerResponse{
+			Header:         res.Header,
+			HTTPStatusCode: res.StatusCode,
+		},
+	}
+	target := &ret
+	if err := gensupport.DecodeResponse(target, res); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Sets the access control policy on a Table resource.\nReplaces any existing policy.",
+	//   "flatPath": "v2/projects/{projectsId}/instances/{instancesId}/clusters/{clustersId}/backups/{backupsId}:setIamPolicy",
+	//   "httpMethod": "POST",
+	//   "id": "bigtableadmin.projects.instances.clusters.backups.setIamPolicy",
+	//   "parameterOrder": [
+	//     "resource"
+	//   ],
+	//   "parameters": {
+	//     "resource": {
+	//       "description": "REQUIRED: The resource for which the policy is being specified.\nSee the operation documentation for the appropriate value for this field.",
+	//       "location": "path",
+	//       "pattern": "^projects/[^/]+/instances/[^/]+/clusters/[^/]+/backups/[^/]+$",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "v2/{+resource}:setIamPolicy",
+	//   "request": {
+	//     "$ref": "SetIamPolicyRequest"
+	//   },
+	//   "response": {
+	//     "$ref": "Policy"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/bigtable.admin",
+	//     "https://www.googleapis.com/auth/bigtable.admin.table",
+	//     "https://www.googleapis.com/auth/cloud-bigtable.admin",
+	//     "https://www.googleapis.com/auth/cloud-bigtable.admin.table",
+	//     "https://www.googleapis.com/auth/cloud-platform"
+	//   ]
+	// }
+
+}
+
+// method id "bigtableadmin.projects.instances.clusters.backups.testIamPermissions":
+
+type ProjectsInstancesClustersBackupsTestIamPermissionsCall struct {
+	s                         *Service
+	resource                  string
+	testiampermissionsrequest *TestIamPermissionsRequest
+	urlParams_                gensupport.URLParams
+	ctx_                      context.Context
+	header_                   http.Header
+}
+
+// TestIamPermissions: Returns permissions that the caller has on the
+// specified table resource.
+func (r *ProjectsInstancesClustersBackupsService) TestIamPermissions(resource string, testiampermissionsrequest *TestIamPermissionsRequest) *ProjectsInstancesClustersBackupsTestIamPermissionsCall {
+	c := &ProjectsInstancesClustersBackupsTestIamPermissionsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
+	c.resource = resource
+	c.testiampermissionsrequest = testiampermissionsrequest
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *ProjectsInstancesClustersBackupsTestIamPermissionsCall) Fields(s ...googleapi.Field) *ProjectsInstancesClustersBackupsTestIamPermissionsCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *ProjectsInstancesClustersBackupsTestIamPermissionsCall) Context(ctx context.Context) *ProjectsInstancesClustersBackupsTestIamPermissionsCall {
+	c.ctx_ = ctx
+	return c
+}
+
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *ProjectsInstancesClustersBackupsTestIamPermissionsCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
+func (c *ProjectsInstancesClustersBackupsTestIamPermissionsCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.testiampermissionsrequest)
+	if err != nil {
+		return nil, err
+	}
+	reqHeaders.Set("Content-Type", "application/json")
+	c.urlParams_.Set("alt", alt)
+	c.urlParams_.Set("prettyPrint", "false")
+	urls := googleapi.ResolveRelative(c.s.BasePath, "v2/{+resource}:testIamPermissions")
+	urls += "?" + c.urlParams_.Encode()
+	req, err := http.NewRequest("POST", urls, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header = reqHeaders
+	googleapi.Expand(req.URL, map[string]string{
+		"resource": c.resource,
+	})
+	return gensupport.SendRequest(c.ctx_, c.s.client, req)
+}
+
+// Do executes the "bigtableadmin.projects.instances.clusters.backups.testIamPermissions" call.
+// Exactly one of *TestIamPermissionsResponse or error will be non-nil.
+// Any non-2xx status code is an error. Response headers are in either
+// *TestIamPermissionsResponse.ServerResponse.Header or (if a response
+// was returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was
+// because http.StatusNotModified was returned.
+func (c *ProjectsInstancesClustersBackupsTestIamPermissionsCall) Do(opts ...googleapi.CallOption) (*TestIamPermissionsResponse, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if res != nil && res.StatusCode == http.StatusNotModified {
+		if res.Body != nil {
+			res.Body.Close()
+		}
+		return nil, &googleapi.Error{
+			Code:   res.StatusCode,
+			Header: res.Header,
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	ret := &TestIamPermissionsResponse{
+		ServerResponse: googleapi.ServerResponse{
+			Header:         res.Header,
+			HTTPStatusCode: res.StatusCode,
+		},
+	}
+	target := &ret
+	if err := gensupport.DecodeResponse(target, res); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Returns permissions that the caller has on the specified table resource.",
+	//   "flatPath": "v2/projects/{projectsId}/instances/{instancesId}/clusters/{clustersId}/backups/{backupsId}:testIamPermissions",
+	//   "httpMethod": "POST",
+	//   "id": "bigtableadmin.projects.instances.clusters.backups.testIamPermissions",
+	//   "parameterOrder": [
+	//     "resource"
+	//   ],
+	//   "parameters": {
+	//     "resource": {
+	//       "description": "REQUIRED: The resource for which the policy detail is being requested.\nSee the operation documentation for the appropriate value for this field.",
+	//       "location": "path",
+	//       "pattern": "^projects/[^/]+/instances/[^/]+/clusters/[^/]+/backups/[^/]+$",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "v2/{+resource}:testIamPermissions",
+	//   "request": {
+	//     "$ref": "TestIamPermissionsRequest"
+	//   },
+	//   "response": {
+	//     "$ref": "TestIamPermissionsResponse"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/bigtable.admin",
+	//     "https://www.googleapis.com/auth/bigtable.admin.table",
+	//     "https://www.googleapis.com/auth/cloud-bigtable.admin",
+	//     "https://www.googleapis.com/auth/cloud-bigtable.admin.table",
 	//     "https://www.googleapis.com/auth/cloud-platform"
 	//   ]
 	// }
@@ -6163,7 +6824,7 @@ func (c *ProjectsInstancesTablesCheckConsistencyCall) Header() http.Header {
 
 func (c *ProjectsInstancesTablesCheckConsistencyCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -6236,7 +6897,7 @@ func (c *ProjectsInstancesTablesCheckConsistencyCall) Do(opts ...googleapi.CallO
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The unique name of the Table for which to check replication consistency.\nValues are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e/tables/\u003ctable\u003e`.",
+	//       "description": "Required. The unique name of the Table for which to check replication consistency.\nValues are of the form\n`projects/{project}/instances/{instance}/tables/{table}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+/tables/[^/]+$",
 	//       "required": true,
@@ -6310,7 +6971,7 @@ func (c *ProjectsInstancesTablesCreateCall) Header() http.Header {
 
 func (c *ProjectsInstancesTablesCreateCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -6383,7 +7044,7 @@ func (c *ProjectsInstancesTablesCreateCall) Do(opts ...googleapi.CallOption) (*T
 	//   ],
 	//   "parameters": {
 	//     "parent": {
-	//       "description": "The unique name of the instance in which to create the table.\nValues are of the form `projects/\u003cproject\u003e/instances/\u003cinstance\u003e`.",
+	//       "description": "Required. The unique name of the instance in which to create the table.\nValues are of the form `projects/{project}/instances/{instance}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+$",
 	//       "required": true,
@@ -6452,7 +7113,7 @@ func (c *ProjectsInstancesTablesDeleteCall) Header() http.Header {
 
 func (c *ProjectsInstancesTablesDeleteCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -6520,7 +7181,7 @@ func (c *ProjectsInstancesTablesDeleteCall) Do(opts ...googleapi.CallOption) (*E
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The unique name of the table to be deleted.\nValues are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e/tables/\u003ctable\u003e`.",
+	//       "description": "Required. The unique name of the table to be deleted.\nValues are of the form\n`projects/{project}/instances/{instance}/tables/{table}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+/tables/[^/]+$",
 	//       "required": true,
@@ -6592,7 +7253,7 @@ func (c *ProjectsInstancesTablesDropRowRangeCall) Header() http.Header {
 
 func (c *ProjectsInstancesTablesDropRowRangeCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -6665,7 +7326,7 @@ func (c *ProjectsInstancesTablesDropRowRangeCall) Do(opts ...googleapi.CallOptio
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The unique name of the table on which to drop a range of rows.\nValues are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e/tables/\u003ctable\u003e`.",
+	//       "description": "Required. The unique name of the table on which to drop a range of rows.\nValues are of the form\n`projects/{project}/instances/{instance}/tables/{table}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+/tables/[^/]+$",
 	//       "required": true,
@@ -6742,7 +7403,7 @@ func (c *ProjectsInstancesTablesGenerateConsistencyTokenCall) Header() http.Head
 
 func (c *ProjectsInstancesTablesGenerateConsistencyTokenCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -6815,7 +7476,7 @@ func (c *ProjectsInstancesTablesGenerateConsistencyTokenCall) Do(opts ...googlea
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The unique name of the Table for which to create a consistency token.\nValues are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e/tables/\u003ctable\u003e`.",
+	//       "description": "Required. The unique name of the Table for which to create a consistency token.\nValues are of the form\n`projects/{project}/instances/{instance}/tables/{table}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+/tables/[^/]+$",
 	//       "required": true,
@@ -6910,7 +7571,7 @@ func (c *ProjectsInstancesTablesGetCall) Header() http.Header {
 
 func (c *ProjectsInstancesTablesGetCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -6981,7 +7642,7 @@ func (c *ProjectsInstancesTablesGetCall) Do(opts ...googleapi.CallOption) (*Tabl
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The unique name of the requested table.\nValues are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e/tables/\u003ctable\u003e`.",
+	//       "description": "Required. The unique name of the requested table.\nValues are of the form\n`projects/{project}/instances/{instance}/tables/{table}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+/tables/[^/]+$",
 	//       "required": true,
@@ -7011,6 +7672,154 @@ func (c *ProjectsInstancesTablesGetCall) Do(opts ...googleapi.CallOption) (*Tabl
 	//     "https://www.googleapis.com/auth/cloud-bigtable.admin.table",
 	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/cloud-platform.read-only"
+	//   ]
+	// }
+
+}
+
+// method id "bigtableadmin.projects.instances.tables.getIamPolicy":
+
+type ProjectsInstancesTablesGetIamPolicyCall struct {
+	s                   *Service
+	resource            string
+	getiampolicyrequest *GetIamPolicyRequest
+	urlParams_          gensupport.URLParams
+	ctx_                context.Context
+	header_             http.Header
+}
+
+// GetIamPolicy: Gets the access control policy for a Table
+// resource.
+// Returns an empty policy if the resource exists but does not have a
+// policy
+// set.
+func (r *ProjectsInstancesTablesService) GetIamPolicy(resource string, getiampolicyrequest *GetIamPolicyRequest) *ProjectsInstancesTablesGetIamPolicyCall {
+	c := &ProjectsInstancesTablesGetIamPolicyCall{s: r.s, urlParams_: make(gensupport.URLParams)}
+	c.resource = resource
+	c.getiampolicyrequest = getiampolicyrequest
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *ProjectsInstancesTablesGetIamPolicyCall) Fields(s ...googleapi.Field) *ProjectsInstancesTablesGetIamPolicyCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *ProjectsInstancesTablesGetIamPolicyCall) Context(ctx context.Context) *ProjectsInstancesTablesGetIamPolicyCall {
+	c.ctx_ = ctx
+	return c
+}
+
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *ProjectsInstancesTablesGetIamPolicyCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
+func (c *ProjectsInstancesTablesGetIamPolicyCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.getiampolicyrequest)
+	if err != nil {
+		return nil, err
+	}
+	reqHeaders.Set("Content-Type", "application/json")
+	c.urlParams_.Set("alt", alt)
+	c.urlParams_.Set("prettyPrint", "false")
+	urls := googleapi.ResolveRelative(c.s.BasePath, "v2/{+resource}:getIamPolicy")
+	urls += "?" + c.urlParams_.Encode()
+	req, err := http.NewRequest("POST", urls, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header = reqHeaders
+	googleapi.Expand(req.URL, map[string]string{
+		"resource": c.resource,
+	})
+	return gensupport.SendRequest(c.ctx_, c.s.client, req)
+}
+
+// Do executes the "bigtableadmin.projects.instances.tables.getIamPolicy" call.
+// Exactly one of *Policy or error will be non-nil. Any non-2xx status
+// code is an error. Response headers are in either
+// *Policy.ServerResponse.Header or (if a response was returned at all)
+// in error.(*googleapi.Error).Header. Use googleapi.IsNotModified to
+// check whether the returned error was because http.StatusNotModified
+// was returned.
+func (c *ProjectsInstancesTablesGetIamPolicyCall) Do(opts ...googleapi.CallOption) (*Policy, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if res != nil && res.StatusCode == http.StatusNotModified {
+		if res.Body != nil {
+			res.Body.Close()
+		}
+		return nil, &googleapi.Error{
+			Code:   res.StatusCode,
+			Header: res.Header,
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	ret := &Policy{
+		ServerResponse: googleapi.ServerResponse{
+			Header:         res.Header,
+			HTTPStatusCode: res.StatusCode,
+		},
+	}
+	target := &ret
+	if err := gensupport.DecodeResponse(target, res); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Gets the access control policy for a Table resource.\nReturns an empty policy if the resource exists but does not have a policy\nset.",
+	//   "flatPath": "v2/projects/{projectsId}/instances/{instancesId}/tables/{tablesId}:getIamPolicy",
+	//   "httpMethod": "POST",
+	//   "id": "bigtableadmin.projects.instances.tables.getIamPolicy",
+	//   "parameterOrder": [
+	//     "resource"
+	//   ],
+	//   "parameters": {
+	//     "resource": {
+	//       "description": "REQUIRED: The resource for which the policy is being requested.\nSee the operation documentation for the appropriate value for this field.",
+	//       "location": "path",
+	//       "pattern": "^projects/[^/]+/instances/[^/]+/tables/[^/]+$",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "v2/{+resource}:getIamPolicy",
+	//   "request": {
+	//     "$ref": "GetIamPolicyRequest"
+	//   },
+	//   "response": {
+	//     "$ref": "Policy"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/bigtable.admin",
+	//     "https://www.googleapis.com/auth/bigtable.admin.table",
+	//     "https://www.googleapis.com/auth/cloud-bigtable.admin",
+	//     "https://www.googleapis.com/auth/cloud-bigtable.admin.table",
+	//     "https://www.googleapis.com/auth/cloud-platform"
 	//   ]
 	// }
 
@@ -7062,8 +7871,7 @@ func (c *ProjectsInstancesTablesListCall) PageToken(pageToken string) *ProjectsI
 
 // View sets the optional parameter "view": The view to be applied to
 // the returned tables' fields.
-// Defaults to `NAME_ONLY` if unspecified; no others are currently
-// supported.
+// Only NAME_ONLY view (default) and REPLICATION_VIEW are supported.
 //
 // Possible values:
 //   "VIEW_UNSPECIFIED"
@@ -7113,7 +7921,7 @@ func (c *ProjectsInstancesTablesListCall) Header() http.Header {
 
 func (c *ProjectsInstancesTablesListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -7195,14 +8003,14 @@ func (c *ProjectsInstancesTablesListCall) Do(opts ...googleapi.CallOption) (*Lis
 	//       "type": "string"
 	//     },
 	//     "parent": {
-	//       "description": "The unique name of the instance for which tables should be listed.\nValues are of the form `projects/\u003cproject\u003e/instances/\u003cinstance\u003e`.",
+	//       "description": "Required. The unique name of the instance for which tables should be listed.\nValues are of the form `projects/{project}/instances/{instance}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+$",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "view": {
-	//       "description": "The view to be applied to the returned tables' fields.\nDefaults to `NAME_ONLY` if unspecified; no others are currently supported.",
+	//       "description": "The view to be applied to the returned tables' fields.\nOnly NAME_ONLY view (default) and REPLICATION_VIEW are supported.",
 	//       "enum": [
 	//         "VIEW_UNSPECIFIED",
 	//         "NAME_ONLY",
@@ -7303,7 +8111,7 @@ func (c *ProjectsInstancesTablesModifyColumnFamiliesCall) Header() http.Header {
 
 func (c *ProjectsInstancesTablesModifyColumnFamiliesCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -7376,7 +8184,7 @@ func (c *ProjectsInstancesTablesModifyColumnFamiliesCall) Do(opts ...googleapi.C
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The unique name of the table whose families should be modified.\nValues are of the form\n`projects/\u003cproject\u003e/instances/\u003cinstance\u003e/tables/\u003ctable\u003e`.",
+	//       "description": "Required. The unique name of the table whose families should be modified.\nValues are of the form\n`projects/{project}/instances/{instance}/tables/{table}`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/instances/[^/]+/tables/[^/]+$",
 	//       "required": true,
@@ -7389,6 +8197,297 @@ func (c *ProjectsInstancesTablesModifyColumnFamiliesCall) Do(opts ...googleapi.C
 	//   },
 	//   "response": {
 	//     "$ref": "Table"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/bigtable.admin",
+	//     "https://www.googleapis.com/auth/bigtable.admin.table",
+	//     "https://www.googleapis.com/auth/cloud-bigtable.admin",
+	//     "https://www.googleapis.com/auth/cloud-bigtable.admin.table",
+	//     "https://www.googleapis.com/auth/cloud-platform"
+	//   ]
+	// }
+
+}
+
+// method id "bigtableadmin.projects.instances.tables.setIamPolicy":
+
+type ProjectsInstancesTablesSetIamPolicyCall struct {
+	s                   *Service
+	resource            string
+	setiampolicyrequest *SetIamPolicyRequest
+	urlParams_          gensupport.URLParams
+	ctx_                context.Context
+	header_             http.Header
+}
+
+// SetIamPolicy: Sets the access control policy on a Table
+// resource.
+// Replaces any existing policy.
+func (r *ProjectsInstancesTablesService) SetIamPolicy(resource string, setiampolicyrequest *SetIamPolicyRequest) *ProjectsInstancesTablesSetIamPolicyCall {
+	c := &ProjectsInstancesTablesSetIamPolicyCall{s: r.s, urlParams_: make(gensupport.URLParams)}
+	c.resource = resource
+	c.setiampolicyrequest = setiampolicyrequest
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *ProjectsInstancesTablesSetIamPolicyCall) Fields(s ...googleapi.Field) *ProjectsInstancesTablesSetIamPolicyCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *ProjectsInstancesTablesSetIamPolicyCall) Context(ctx context.Context) *ProjectsInstancesTablesSetIamPolicyCall {
+	c.ctx_ = ctx
+	return c
+}
+
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *ProjectsInstancesTablesSetIamPolicyCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
+func (c *ProjectsInstancesTablesSetIamPolicyCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.setiampolicyrequest)
+	if err != nil {
+		return nil, err
+	}
+	reqHeaders.Set("Content-Type", "application/json")
+	c.urlParams_.Set("alt", alt)
+	c.urlParams_.Set("prettyPrint", "false")
+	urls := googleapi.ResolveRelative(c.s.BasePath, "v2/{+resource}:setIamPolicy")
+	urls += "?" + c.urlParams_.Encode()
+	req, err := http.NewRequest("POST", urls, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header = reqHeaders
+	googleapi.Expand(req.URL, map[string]string{
+		"resource": c.resource,
+	})
+	return gensupport.SendRequest(c.ctx_, c.s.client, req)
+}
+
+// Do executes the "bigtableadmin.projects.instances.tables.setIamPolicy" call.
+// Exactly one of *Policy or error will be non-nil. Any non-2xx status
+// code is an error. Response headers are in either
+// *Policy.ServerResponse.Header or (if a response was returned at all)
+// in error.(*googleapi.Error).Header. Use googleapi.IsNotModified to
+// check whether the returned error was because http.StatusNotModified
+// was returned.
+func (c *ProjectsInstancesTablesSetIamPolicyCall) Do(opts ...googleapi.CallOption) (*Policy, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if res != nil && res.StatusCode == http.StatusNotModified {
+		if res.Body != nil {
+			res.Body.Close()
+		}
+		return nil, &googleapi.Error{
+			Code:   res.StatusCode,
+			Header: res.Header,
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	ret := &Policy{
+		ServerResponse: googleapi.ServerResponse{
+			Header:         res.Header,
+			HTTPStatusCode: res.StatusCode,
+		},
+	}
+	target := &ret
+	if err := gensupport.DecodeResponse(target, res); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Sets the access control policy on a Table resource.\nReplaces any existing policy.",
+	//   "flatPath": "v2/projects/{projectsId}/instances/{instancesId}/tables/{tablesId}:setIamPolicy",
+	//   "httpMethod": "POST",
+	//   "id": "bigtableadmin.projects.instances.tables.setIamPolicy",
+	//   "parameterOrder": [
+	//     "resource"
+	//   ],
+	//   "parameters": {
+	//     "resource": {
+	//       "description": "REQUIRED: The resource for which the policy is being specified.\nSee the operation documentation for the appropriate value for this field.",
+	//       "location": "path",
+	//       "pattern": "^projects/[^/]+/instances/[^/]+/tables/[^/]+$",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "v2/{+resource}:setIamPolicy",
+	//   "request": {
+	//     "$ref": "SetIamPolicyRequest"
+	//   },
+	//   "response": {
+	//     "$ref": "Policy"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/bigtable.admin",
+	//     "https://www.googleapis.com/auth/bigtable.admin.table",
+	//     "https://www.googleapis.com/auth/cloud-bigtable.admin",
+	//     "https://www.googleapis.com/auth/cloud-bigtable.admin.table",
+	//     "https://www.googleapis.com/auth/cloud-platform"
+	//   ]
+	// }
+
+}
+
+// method id "bigtableadmin.projects.instances.tables.testIamPermissions":
+
+type ProjectsInstancesTablesTestIamPermissionsCall struct {
+	s                         *Service
+	resource                  string
+	testiampermissionsrequest *TestIamPermissionsRequest
+	urlParams_                gensupport.URLParams
+	ctx_                      context.Context
+	header_                   http.Header
+}
+
+// TestIamPermissions: Returns permissions that the caller has on the
+// specified table resource.
+func (r *ProjectsInstancesTablesService) TestIamPermissions(resource string, testiampermissionsrequest *TestIamPermissionsRequest) *ProjectsInstancesTablesTestIamPermissionsCall {
+	c := &ProjectsInstancesTablesTestIamPermissionsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
+	c.resource = resource
+	c.testiampermissionsrequest = testiampermissionsrequest
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *ProjectsInstancesTablesTestIamPermissionsCall) Fields(s ...googleapi.Field) *ProjectsInstancesTablesTestIamPermissionsCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *ProjectsInstancesTablesTestIamPermissionsCall) Context(ctx context.Context) *ProjectsInstancesTablesTestIamPermissionsCall {
+	c.ctx_ = ctx
+	return c
+}
+
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *ProjectsInstancesTablesTestIamPermissionsCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
+func (c *ProjectsInstancesTablesTestIamPermissionsCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.testiampermissionsrequest)
+	if err != nil {
+		return nil, err
+	}
+	reqHeaders.Set("Content-Type", "application/json")
+	c.urlParams_.Set("alt", alt)
+	c.urlParams_.Set("prettyPrint", "false")
+	urls := googleapi.ResolveRelative(c.s.BasePath, "v2/{+resource}:testIamPermissions")
+	urls += "?" + c.urlParams_.Encode()
+	req, err := http.NewRequest("POST", urls, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header = reqHeaders
+	googleapi.Expand(req.URL, map[string]string{
+		"resource": c.resource,
+	})
+	return gensupport.SendRequest(c.ctx_, c.s.client, req)
+}
+
+// Do executes the "bigtableadmin.projects.instances.tables.testIamPermissions" call.
+// Exactly one of *TestIamPermissionsResponse or error will be non-nil.
+// Any non-2xx status code is an error. Response headers are in either
+// *TestIamPermissionsResponse.ServerResponse.Header or (if a response
+// was returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was
+// because http.StatusNotModified was returned.
+func (c *ProjectsInstancesTablesTestIamPermissionsCall) Do(opts ...googleapi.CallOption) (*TestIamPermissionsResponse, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if res != nil && res.StatusCode == http.StatusNotModified {
+		if res.Body != nil {
+			res.Body.Close()
+		}
+		return nil, &googleapi.Error{
+			Code:   res.StatusCode,
+			Header: res.Header,
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	ret := &TestIamPermissionsResponse{
+		ServerResponse: googleapi.ServerResponse{
+			Header:         res.Header,
+			HTTPStatusCode: res.StatusCode,
+		},
+	}
+	target := &ret
+	if err := gensupport.DecodeResponse(target, res); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Returns permissions that the caller has on the specified table resource.",
+	//   "flatPath": "v2/projects/{projectsId}/instances/{instancesId}/tables/{tablesId}:testIamPermissions",
+	//   "httpMethod": "POST",
+	//   "id": "bigtableadmin.projects.instances.tables.testIamPermissions",
+	//   "parameterOrder": [
+	//     "resource"
+	//   ],
+	//   "parameters": {
+	//     "resource": {
+	//       "description": "REQUIRED: The resource for which the policy detail is being requested.\nSee the operation documentation for the appropriate value for this field.",
+	//       "location": "path",
+	//       "pattern": "^projects/[^/]+/instances/[^/]+/tables/[^/]+$",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "v2/{+resource}:testIamPermissions",
+	//   "request": {
+	//     "$ref": "TestIamPermissionsRequest"
+	//   },
+	//   "response": {
+	//     "$ref": "TestIamPermissionsResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/bigtable.admin",
@@ -7456,7 +8555,7 @@ func (c *ProjectsLocationsGetCall) Header() http.Header {
 
 func (c *ProjectsLocationsGetCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -7628,7 +8727,7 @@ func (c *ProjectsLocationsListCall) Header() http.Header {
 
 func (c *ProjectsLocationsListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}

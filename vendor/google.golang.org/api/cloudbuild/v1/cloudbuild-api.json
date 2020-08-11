@@ -22,6 +22,7 @@
   },
   "id": "cloudbuild:v1",
   "kind": "discovery#restDescription",
+  "mtlsRootUrl": "https://cloudbuild.mtls.googleapis.com/",
   "name": "cloudbuild",
   "ownerDomain": "google.com",
   "ownerName": "Google",
@@ -118,7 +119,7 @@
             "name": {
               "description": "The name of the operation resource to be cancelled.",
               "location": "path",
-              "pattern": "^operations/.+$",
+              "pattern": "^operations/.*$",
               "required": true,
               "type": "string"
             }
@@ -146,7 +147,7 @@
             "name": {
               "description": "The name of the operation resource.",
               "location": "path",
-              "pattern": "^operations/.+$",
+              "pattern": "^operations/.*$",
               "required": true,
               "type": "string"
             }
@@ -154,47 +155,6 @@
           "path": "v1/{+name}",
           "response": {
             "$ref": "Operation"
-          },
-          "scopes": [
-            "https://www.googleapis.com/auth/cloud-platform"
-          ]
-        },
-        "list": {
-          "description": "Lists operations that match the specified filter in the request. If the\nserver doesn't support this method, it returns `UNIMPLEMENTED`.\n\nNOTE: the `name` binding allows API services to override the binding\nto use different resource name schemes, such as `users/*/operations`. To\noverride the binding, API services can add a binding such as\n`\"/v1/{name=users/*}/operations\"` to their service configuration.\nFor backwards compatibility, the default name includes the operations\ncollection id, however overriding users must ensure the name binding\nis the parent resource, without the operations collection id.",
-          "flatPath": "v1/operations",
-          "httpMethod": "GET",
-          "id": "cloudbuild.operations.list",
-          "parameterOrder": [
-            "name"
-          ],
-          "parameters": {
-            "filter": {
-              "description": "The standard list filter.",
-              "location": "query",
-              "type": "string"
-            },
-            "name": {
-              "description": "The name of the operation's parent resource.",
-              "location": "path",
-              "pattern": "^operations$",
-              "required": true,
-              "type": "string"
-            },
-            "pageSize": {
-              "description": "The standard list page size.",
-              "format": "int32",
-              "location": "query",
-              "type": "integer"
-            },
-            "pageToken": {
-              "description": "The standard list page token.",
-              "location": "query",
-              "type": "string"
-            }
-          },
-          "path": "v1/{+name}",
-          "response": {
-            "$ref": "ListOperationsResponse"
           },
           "scopes": [
             "https://www.googleapis.com/auth/cloud-platform"
@@ -217,13 +177,13 @@
               ],
               "parameters": {
                 "id": {
-                  "description": "ID of the build.",
+                  "description": "Required. ID of the build.",
                   "location": "path",
                   "required": true,
                   "type": "string"
                 },
                 "projectId": {
-                  "description": "ID of the project.",
+                  "description": "Required. ID of the project.",
                   "location": "path",
                   "required": true,
                   "type": "string"
@@ -250,7 +210,7 @@
               ],
               "parameters": {
                 "projectId": {
-                  "description": "ID of the project.",
+                  "description": "Required. ID of the project.",
                   "location": "path",
                   "required": true,
                   "type": "string"
@@ -278,13 +238,13 @@
               ],
               "parameters": {
                 "id": {
-                  "description": "ID of the build.",
+                  "description": "Required. ID of the build.",
                   "location": "path",
                   "required": true,
                   "type": "string"
                 },
                 "projectId": {
-                  "description": "ID of the project.",
+                  "description": "Required. ID of the project.",
                   "location": "path",
                   "required": true,
                   "type": "string"
@@ -324,7 +284,7 @@
                   "type": "string"
                 },
                 "projectId": {
-                  "description": "ID of the project.",
+                  "description": "Required. ID of the project.",
                   "location": "path",
                   "required": true,
                   "type": "string"
@@ -349,13 +309,13 @@
               ],
               "parameters": {
                 "id": {
-                  "description": "Build ID of the original build.",
+                  "description": "Required. Build ID of the original build.",
                   "location": "path",
                   "required": true,
                   "type": "string"
                 },
                 "projectId": {
-                  "description": "ID of the project.",
+                  "description": "Required. ID of the project.",
                   "location": "path",
                   "required": true,
                   "type": "string"
@@ -374,6 +334,67 @@
             }
           }
         },
+        "locations": {
+          "resources": {
+            "operations": {
+              "methods": {
+                "cancel": {
+                  "description": "Starts asynchronous cancellation on a long-running operation.  The server\nmakes a best effort to cancel the operation, but success is not\nguaranteed.  If the server doesn't support this method, it returns\n`google.rpc.Code.UNIMPLEMENTED`.  Clients can use\nOperations.GetOperation or\nother methods to check whether the cancellation succeeded or whether the\noperation completed despite cancellation. On successful cancellation,\nthe operation is not deleted; instead, it becomes an operation with\nan Operation.error value with a google.rpc.Status.code of 1,\ncorresponding to `Code.CANCELLED`.",
+                  "flatPath": "v1/projects/{projectsId}/locations/{locationsId}/operations/{operationsId}:cancel",
+                  "httpMethod": "POST",
+                  "id": "cloudbuild.projects.locations.operations.cancel",
+                  "parameterOrder": [
+                    "name"
+                  ],
+                  "parameters": {
+                    "name": {
+                      "description": "The name of the operation resource to be cancelled.",
+                      "location": "path",
+                      "pattern": "^projects/[^/]+/locations/[^/]+/operations/[^/]+$",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1/{+name}:cancel",
+                  "request": {
+                    "$ref": "CancelOperationRequest"
+                  },
+                  "response": {
+                    "$ref": "Empty"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "get": {
+                  "description": "Gets the latest state of a long-running operation.  Clients can use this\nmethod to poll the operation result at intervals as recommended by the API\nservice.",
+                  "flatPath": "v1/projects/{projectsId}/locations/{locationsId}/operations/{operationsId}",
+                  "httpMethod": "GET",
+                  "id": "cloudbuild.projects.locations.operations.get",
+                  "parameterOrder": [
+                    "name"
+                  ],
+                  "parameters": {
+                    "name": {
+                      "description": "The name of the operation resource.",
+                      "location": "path",
+                      "pattern": "^projects/[^/]+/locations/[^/]+/operations/[^/]+$",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1/{+name}",
+                  "response": {
+                    "$ref": "Operation"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                }
+              }
+            }
+          }
+        },
         "triggers": {
           "methods": {
             "create": {
@@ -386,7 +407,7 @@
               ],
               "parameters": {
                 "projectId": {
-                  "description": "ID of the project for which to configure automatic builds.",
+                  "description": "Required. ID of the project for which to configure automatic builds.",
                   "location": "path",
                   "required": true,
                   "type": "string"
@@ -414,13 +435,13 @@
               ],
               "parameters": {
                 "projectId": {
-                  "description": "ID of the project that owns the trigger.",
+                  "description": "Required. ID of the project that owns the trigger.",
                   "location": "path",
                   "required": true,
                   "type": "string"
                 },
                 "triggerId": {
-                  "description": "ID of the `BuildTrigger` to delete.",
+                  "description": "Required. ID of the `BuildTrigger` to delete.",
                   "location": "path",
                   "required": true,
                   "type": "string"
@@ -445,13 +466,13 @@
               ],
               "parameters": {
                 "projectId": {
-                  "description": "ID of the project that owns the trigger.",
+                  "description": "Required. ID of the project that owns the trigger.",
                   "location": "path",
                   "required": true,
                   "type": "string"
                 },
                 "triggerId": {
-                  "description": "ID of the `BuildTrigger` to get.",
+                  "description": "Required. Identifier (`id` or `name`) of the `BuildTrigger` to get.",
                   "location": "path",
                   "required": true,
                   "type": "string"
@@ -486,7 +507,7 @@
                   "type": "string"
                 },
                 "projectId": {
-                  "description": "ID of the project for which to list BuildTriggers.",
+                  "description": "Required. ID of the project for which to list BuildTriggers.",
                   "location": "path",
                   "required": true,
                   "type": "string"
@@ -511,13 +532,13 @@
               ],
               "parameters": {
                 "projectId": {
-                  "description": "ID of the project that owns the trigger.",
+                  "description": "Required. ID of the project that owns the trigger.",
                   "location": "path",
                   "required": true,
                   "type": "string"
                 },
                 "triggerId": {
-                  "description": "ID of the `BuildTrigger` to update.",
+                  "description": "Required. ID of the `BuildTrigger` to update.",
                   "location": "path",
                   "required": true,
                   "type": "string"
@@ -545,13 +566,13 @@
               ],
               "parameters": {
                 "projectId": {
-                  "description": "ID of the project.",
+                  "description": "Required. ID of the project.",
                   "location": "path",
                   "required": true,
                   "type": "string"
                 },
                 "triggerId": {
-                  "description": "ID of the trigger.",
+                  "description": "Required. ID of the trigger.",
                   "location": "path",
                   "required": true,
                   "type": "string"
@@ -573,7 +594,7 @@
       }
     }
   },
-  "revision": "20190702",
+  "revision": "20200626",
   "rootUrl": "https://cloudbuild.googleapis.com/",
   "schemas": {
     "ArtifactObjects": {
@@ -683,6 +704,11 @@
           "description": "Output only. ID of the project.",
           "type": "string"
         },
+        "queueTtl": {
+          "description": "TTL in queue for this build. If provided and the build is enqueued longer\nthan this value, the build will expire and the build status will be\n`EXPIRED`.\n\nThe TTL starts ticking from create_time.",
+          "format": "google-duration",
+          "type": "string"
+        },
         "results": {
           "$ref": "Results",
           "description": "Output only. Results of the build."
@@ -717,7 +743,8 @@
             "FAILURE",
             "INTERNAL_ERROR",
             "TIMEOUT",
-            "CANCELLED"
+            "CANCELLED",
+            "EXPIRED"
           ],
           "enumDescriptions": [
             "Status of the build is unknown.",
@@ -727,7 +754,8 @@
             "Build or step failed to complete successfully.",
             "Build or step failed due to an internal cause.",
             "Build or step took longer than was allowed.",
-            "Build or step was canceled by a user."
+            "Build or step was canceled by a user.",
+            "Build was enqueued for longer than the value of `queue_ttl`."
           ],
           "type": "string"
         },
@@ -757,7 +785,7 @@
           "type": "array"
         },
         "timeout": {
-          "description": "Amount of time that this build should be allowed to run, to second\ngranularity. If this amount of time elapses, work on the build will cease\nand the build status will be `TIMEOUT`.\n\nDefault time is ten minutes.",
+          "description": "Amount of time that this build should be allowed to run, to second\ngranularity. If this amount of time elapses, work on the build will cease\nand the build status will be `TIMEOUT`.\n\n`timeout` starts ticking from `startTime`.\n\nDefault time is ten minutes.",
           "format": "google-duration",
           "type": "string"
         },
@@ -791,6 +819,10 @@
           "format": "int64",
           "type": "string"
         },
+        "dynamicSubstitutions": {
+          "description": "Option to specify whether or not to apply bash style string\noperations to the substitutions.\n\nNOTE: this is always enabled for triggered builds and cannot be\noverridden in the build configuration file.",
+          "type": "boolean"
+        },
         "env": {
           "description": "A list of global environment variable definitions that will exist for all\nbuild steps in this build. If a variable is defined in both globally and in\na build step, the variable will use the build step value.\n\nThe elements are of the form \"KEY=VALUE\" for the environment variable \"KEY\"\nbeing given the value \"VALUE\".",
           "items": {
@@ -813,16 +845,20 @@
           "type": "string"
         },
         "logging": {
-          "description": "Option to specify the logging mode, which determines where the logs are\nstored.",
+          "description": "Option to specify the logging mode, which determines if and where build\nlogs are stored.",
           "enum": [
             "LOGGING_UNSPECIFIED",
             "LEGACY",
-            "GCS_ONLY"
+            "GCS_ONLY",
+            "STACKDRIVER_ONLY",
+            "NONE"
           ],
           "enumDescriptions": [
             "The service determines the logging mode. The default is `LEGACY`. Do not\nrely on the default logging behavior as it may change in the future.",
-            "Stackdriver logging and Cloud Storage logging are enabled.",
-            "Only Cloud Storage logging is enabled."
+            "Cloud Logging (Stackdriver) and Cloud Storage logging are enabled.",
+            "Only Cloud Storage logging is enabled.",
+            "Only Cloud Logging (Stackdriver) is enabled. Note that logs for both the\nCloud Console UI and Cloud SDK are based on Cloud Storage logs, so\nneither will provide logs if this option is chosen.",
+            "Turn off all logging. No build logs will be captured."
           ],
           "type": "string"
         },
@@ -877,7 +913,7 @@
           "type": "array"
         },
         "substitutionOption": {
-          "description": "Option to specify behavior when there is an error in the substitution\nchecks.",
+          "description": "Option to specify behavior when there is an error in the substitution\nchecks.\n\nNOTE: this is always set to ALLOW_LOOSE for triggered builds and cannot\nbe overridden in the build configuration file.",
           "enum": [
             "MUST_MATCH",
             "ALLOW_LOOSE"
@@ -896,7 +932,7 @@
           "type": "array"
         },
         "workerPool": {
-          "description": "Option to specify a `WorkerPool` for the build. User specifies the pool\nwith the format \"[WORKERPOOL_PROJECT_ID]/[WORKERPOOL_NAME]\".\nThis is an experimental field.",
+          "description": "Option to specify a `WorkerPool` for the build.\nFormat: projects/{project}/workerPools/{workerPool}\n\nThis field is experimental.",
           "type": "string"
         }
       },
@@ -957,7 +993,8 @@
             "FAILURE",
             "INTERNAL_ERROR",
             "TIMEOUT",
-            "CANCELLED"
+            "CANCELLED",
+            "EXPIRED"
           ],
           "enumDescriptions": [
             "Status of the build is unknown.",
@@ -967,7 +1004,8 @@
             "Build or step failed to complete successfully.",
             "Build or step failed due to an internal cause.",
             "Build or step took longer than was allowed.",
-            "Build or step was canceled by a user."
+            "Build or step was canceled by a user.",
+            "Build was enqueued for longer than the value of `queue_ttl`."
           ],
           "type": "string"
         },
@@ -1024,14 +1062,14 @@
         },
         "github": {
           "$ref": "GitHubEventsConfig",
-          "description": "GitHubEventsConfig describes the configuration of a trigger that creates\na build whenever a GitHub event is received."
+          "description": "GitHubEventsConfig describes the configuration of a trigger that creates\na build whenever a GitHub event is received.\n\nMutually exclusive with `trigger_template`."
         },
         "id": {
           "description": "Output only. Unique identifier of the trigger.",
           "type": "string"
         },
         "ignoredFiles": {
-          "description": "ignored_files and included_files are file glob matches using\nhttp://godoc/pkg/path/filepath#Match extended with support for \"**\".\n\nIf ignored_files and changed files are both empty, then they are\nnot used to determine whether or not to trigger a build.\n\nIf ignored_files is not empty, then we ignore any files that match\nany of the ignored_file globs. If the change has no files that are\noutside of the ignored_files globs, then we do not trigger a build.",
+          "description": "ignored_files and included_files are file glob matches using\nhttps://golang.org/pkg/path/filepath/#Match extended with support for \"**\".\n\nIf ignored_files and changed files are both empty, then they are\nnot used to determine whether or not to trigger a build.\n\nIf ignored_files is not empty, then we ignore any files that match\nany of the ignored_file globs. If the change has no files that are\noutside of the ignored_files globs, then we do not trigger a build.",
           "items": {
             "type": "string"
           },
@@ -1044,11 +1082,15 @@
           },
           "type": "array"
         },
+        "name": {
+          "description": "User-assigned name of the trigger. Must be unique within the project.\nTrigger names must meet the following requirements:\n\n+ They must contain only alphanumeric characters and dashes.\n+ They can be 1-64 characters long.\n+ They must begin and end with an alphanumeric character.",
+          "type": "string"
+        },
         "substitutions": {
           "additionalProperties": {
             "type": "string"
           },
-          "description": "Substitutions data for Build resource.",
+          "description": "Substitutions for Build resource. The keys must match the following\nregular expression: `^_[A-Z0-9_]+$`.The keys cannot conflict with the\nkeys in bindings.",
           "type": "object"
         },
         "tags": {
@@ -1060,7 +1102,7 @@
         },
         "triggerTemplate": {
           "$ref": "RepoSource",
-          "description": "Template describing the types of source changes to trigger a build.\n\nBranch and tag names in trigger templates are interpreted as regular\nexpressions. Any branch or tag change that matches that regular expression\nwill trigger a build."
+          "description": "Template describing the types of source changes to trigger a build.\n\nBranch and tag names in trigger templates are interpreted as regular\nexpressions. Any branch or tag change that matches that regular expression\nwill trigger a build.\n\nMutually exclusive with `github`."
         }
       },
       "type": "object"
@@ -1144,6 +1186,17 @@
       },
       "type": "object"
     },
+    "HTTPDelivery": {
+      "description": "HTTPDelivery is the delivery configuration for an HTTP notification.",
+      "id": "HTTPDelivery",
+      "properties": {
+        "uri": {
+          "description": "The URI to which JSON-containing HTTP POST requests should be sent.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "Hash": {
       "description": "Container message for hash values.",
       "id": "Hash",
@@ -1206,18 +1259,113 @@
       },
       "type": "object"
     },
-    "ListOperationsResponse": {
-      "description": "The response message for Operations.ListOperations.",
-      "id": "ListOperationsResponse",
+    "Notification": {
+      "description": "Notification is the container which holds the data that is relevant to this\nparticular notification.",
+      "id": "Notification",
       "properties": {
-        "nextPageToken": {
-          "description": "The standard List next-page token.",
+        "filter": {
+          "description": "The filter string to use for notification filtering.\nCurrently, this is assumed to be a CEL program.\nSee https://opensource.google/projects/cel for more.",
           "type": "string"
         },
-        "operations": {
-          "description": "A list of operations that matches the specified filter in the request.",
+        "httpDelivery": {
+          "$ref": "HTTPDelivery",
+          "description": "Configuration for HTTP delivery."
+        },
+        "slackDelivery": {
+          "$ref": "SlackDelivery",
+          "description": "Configuration for Slack delivery."
+        },
+        "smtpDelivery": {
+          "$ref": "SMTPDelivery",
+          "description": "Configuration for SMTP (email) delivery."
+        },
+        "structDelivery": {
+          "additionalProperties": {
+            "description": "Properties of the object.",
+            "type": "any"
+          },
+          "description": "Escape hatch for users to supply custom delivery configs.",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "NotifierConfig": {
+      "description": "NotifierConfig is the top-level configuration message.",
+      "id": "NotifierConfig",
+      "properties": {
+        "apiVersion": {
+          "description": "The API version of this configuration format.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "The type of notifier to use (e.g. SMTPNotifier).",
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "NotifierMetadata",
+          "description": "Metadata for referring to/handling/deploying this notifier."
+        },
+        "spec": {
+          "$ref": "NotifierSpec",
+          "description": "The actual configuration for this notifier."
+        }
+      },
+      "type": "object"
+    },
+    "NotifierMetadata": {
+      "description": "NotifierMetadata contains the data which can be used to reference or describe\nthis notifier.",
+      "id": "NotifierMetadata",
+      "properties": {
+        "name": {
+          "description": "The human-readable and user-given name for the notifier.\nFor example: \"repo-merge-email-notifier\".",
+          "type": "string"
+        },
+        "notifier": {
+          "description": "The string representing the name and version of notifier to deploy.\nExpected to be of the form of \"\u003cregistry-path\u003e/\u003cname\u003e:\u003cversion\u003e\".\nFor example: \"gcr.io/my-project/notifiers/smtp:1.2.34\".",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "NotifierSecret": {
+      "description": "NotifierSecret is the container that maps a secret name (reference) to its\nGoogle Cloud Secret Manager resource path.",
+      "id": "NotifierSecret",
+      "properties": {
+        "name": {
+          "description": "Name is the local name of the secret, such as the verbatim string\n\"my-smtp-password\".",
+          "type": "string"
+        },
+        "value": {
+          "description": "Value is interpreted to be a resource path for fetching the actual\n(versioned) secret data for this secret. For example, this would be a\nGoogle Cloud Secret Manager secret version resource path like:\n\"projects/my-project/secrets/my-secret/versions/latest\".",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "NotifierSecretRef": {
+      "description": "NotifierSecretRef contains the reference to a secret stored in the\ncorresponding NotifierSpec.",
+      "id": "NotifierSecretRef",
+      "properties": {
+        "secretRef": {
+          "description": "The value of `secret_ref` should be a `name` that is registered in a\n`Secret` in the `secrets` list of the `Spec`.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "NotifierSpec": {
+      "description": "NotifierSpec is the configuration container for notifications.",
+      "id": "NotifierSpec",
+      "properties": {
+        "notification": {
+          "$ref": "Notification",
+          "description": "The configuration of this particular notifier."
+        },
+        "secrets": {
+          "description": "Configurations for secret resources used by this particular notifier.",
           "items": {
-            "$ref": "Operation"
+            "$ref": "NotifierSecret"
           },
           "type": "array"
         }
@@ -1268,7 +1416,7 @@
           "type": "string"
         },
         "commentControl": {
-          "description": "Whether to block builds on a \"/gcbrun\" comment from a repository owner or\ncollaborator.",
+          "description": "Configure builds to run whether a repository owner or collaborator need to\ncomment `/gcbrun`.",
           "enum": [
             "COMMENTS_DISABLED",
             "COMMENTS_ENABLED"
@@ -1278,6 +1426,10 @@
             "Enforce that repository owners or collaborators must comment on Pull\nRequests before builds are triggered."
           ],
           "type": "string"
+        },
+        "invertRegex": {
+          "description": "If true, branches that do NOT match the git_ref will trigger a build.",
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -1287,11 +1439,15 @@
       "id": "PushFilter",
       "properties": {
         "branch": {
-          "description": "Regexes of branches to match.\n\nThe syntax of the regular expressions accepted is the syntax accepted by\nRE2 and described at https://github.com/google/re2/wiki/Syntax",
+          "description": "Regexes matching branches to build.\n\nThe syntax of the regular expressions accepted is the syntax accepted by\nRE2 and described at https://github.com/google/re2/wiki/Syntax",
           "type": "string"
         },
+        "invertRegex": {
+          "description": "When true, only trigger a build if the revision regex does NOT match the\ngit_ref regex.",
+          "type": "boolean"
+        },
         "tag": {
-          "description": "Regexes of tags to match.\n\nThe syntax of the regular expressions accepted is the syntax accepted by\nRE2 and described at https://github.com/google/re2/wiki/Syntax",
+          "description": "Regexes matching tags to build.\n\nThe syntax of the regular expressions accepted is the syntax accepted by\nRE2 and described at https://github.com/google/re2/wiki/Syntax",
           "type": "string"
         }
       },
@@ -1302,7 +1458,7 @@
       "id": "RepoSource",
       "properties": {
         "branchName": {
-          "description": "Name of the branch to build.",
+          "description": "Regex matching branches to build.\n\nThe syntax of the regular expressions accepted is the syntax accepted by\nRE2 and described at https://github.com/google/re2/wiki/Syntax",
           "type": "string"
         },
         "commitSha": {
@@ -1313,16 +1469,27 @@
           "description": "Directory, relative to the source root, in which to run the build.\n\nThis must be a relative path. If a step's `dir` is specified and is an\nabsolute path, this value is ignored for that step's execution.",
           "type": "string"
         },
+        "invertRegex": {
+          "description": "Only trigger a build if the revision regex does NOT match the revision\nregex.",
+          "type": "boolean"
+        },
         "projectId": {
           "description": "ID of the project that owns the Cloud Source Repository. If omitted, the\nproject ID requesting the build is assumed.",
           "type": "string"
         },
         "repoName": {
-          "description": "Name of the Cloud Source Repository. If omitted, the name \"default\" is\nassumed.",
+          "description": "Required. Name of the Cloud Source Repository.",
           "type": "string"
         },
+        "substitutions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Substitutions to use in a triggered build.\nShould only be used with RunBuildTrigger",
+          "type": "object"
+        },
         "tagName": {
-          "description": "Name of the tag to build.",
+          "description": "Regex matching tags to build.\n\nThe syntax of the regular expressions accepted is the syntax accepted by\nRE2 and described at https://github.com/google/re2/wiki/Syntax",
           "type": "string"
         }
       },
@@ -1376,6 +1543,40 @@
       "properties": {},
       "type": "object"
     },
+    "SMTPDelivery": {
+      "description": "SMTPDelivery is the delivery configuration for an SMTP (email) notification.",
+      "id": "SMTPDelivery",
+      "properties": {
+        "fromAddress": {
+          "description": "This is the SMTP account/email that appears in the `From:` of the email.\nIf empty, it is assumed to be sender.",
+          "type": "string"
+        },
+        "password": {
+          "$ref": "NotifierSecretRef",
+          "description": "The SMTP sender's password."
+        },
+        "port": {
+          "description": "The SMTP port of the server.",
+          "type": "string"
+        },
+        "recipientAddresses": {
+          "description": "This is the list of addresses to which we send the email (i.e. in the `To:`\nof the email).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "senderAddress": {
+          "description": "This is the SMTP account/email that is used to send the message.",
+          "type": "string"
+        },
+        "server": {
+          "description": "The address of the SMTP server.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "Secret": {
       "description": "Pairs a set of secret environment variables containing encrypted\nvalues with the Cloud KMS key to use to decrypt the value.",
       "id": "Secret",
@@ -1391,6 +1592,17 @@
           },
           "description": "Map of environment variable name to its encrypted value.\n\nSecret environment variables must be unique across all of a build's\nsecrets, and must be used by at least one build step. Values can be at most\n64 KB in size. There can be at most 100 secret values across all of a\nbuild's secrets.",
           "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "SlackDelivery": {
+      "description": "SlackDelivery is the delivery configuration for delivering Slack messages via\nwebhooks. See Slack webhook documentation at:\nhttps://api.slack.com/messaging/webhooks.",
+      "id": "SlackDelivery",
+      "properties": {
+        "webhookUri": {
+          "$ref": "NotifierSecretRef",
+          "description": "The secret reference for the Slack webhook URI for sending messages to a\nchannel."
         }
       },
       "type": "object"

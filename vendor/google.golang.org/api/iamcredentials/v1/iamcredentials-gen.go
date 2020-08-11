@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC.
+// Copyright 2020 Google LLC.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -49,9 +49,10 @@ import (
 	"strconv"
 	"strings"
 
-	gensupport "google.golang.org/api/gensupport"
 	googleapi "google.golang.org/api/googleapi"
+	gensupport "google.golang.org/api/internal/gensupport"
 	option "google.golang.org/api/option"
+	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
 )
 
@@ -68,11 +69,13 @@ var _ = googleapi.Version
 var _ = errors.New
 var _ = strings.Replace
 var _ = context.Canceled
+var _ = internaloption.WithDefaultEndpoint
 
 const apiId = "iamcredentials:v1"
 const apiName = "iamcredentials"
 const apiVersion = "v1"
 const basePath = "https://iamcredentials.googleapis.com/"
+const mtlsBasePath = "https://iamcredentials.mtls.googleapis.com/"
 
 // OAuth2 scopes used by this API.
 const (
@@ -87,6 +90,8 @@ func NewService(ctx context.Context, opts ...option.ClientOption) (*Service, err
 	)
 	// NOTE: prepend, so we don't override user-specified scopes.
 	opts = append([]option.ClientOption{scopesOption}, opts...)
+	opts = append(opts, internaloption.WithDefaultEndpoint(basePath))
+	opts = append(opts, internaloption.WithDefaultMTLSEndpoint(mtlsBasePath))
 	client, endpoint, err := htransport.NewClient(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -180,8 +185,8 @@ type GenerateAccessTokenRequest struct {
 	// hour.
 	Lifetime string `json:"lifetime,omitempty"`
 
-	// Scope: Code to identify the scopes to be included in the OAuth 2.0
-	// access token.
+	// Scope: Required. Code to identify the scopes to be included in the
+	// OAuth 2.0 access token.
 	// See https://developers.google.com/identity/protocols/googlescopes for
 	// more
 	// information.
@@ -247,8 +252,8 @@ func (s *GenerateAccessTokenResponse) MarshalJSON() ([]byte, error) {
 }
 
 type GenerateIdTokenRequest struct {
-	// Audience: The audience for the token, such as the API or account that
-	// this token
+	// Audience: Required. The audience for the token, such as the API or
+	// account that this token
 	// grants access to.
 	Audience string `json:"audience,omitempty"`
 
@@ -350,7 +355,7 @@ type SignBlobRequest struct {
 	// character is required; replacing it with a project ID is invalid.
 	Delegates []string `json:"delegates,omitempty"`
 
-	// Payload: The bytes to sign.
+	// Payload: Required. The bytes to sign.
 	Payload string `json:"payload,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Delegates") to
@@ -377,10 +382,36 @@ func (s *SignBlobRequest) MarshalJSON() ([]byte, error) {
 }
 
 type SignBlobResponse struct {
-	// KeyId: The ID of the key used to sign the blob.
+	// KeyId: The ID of the key used to sign the blob. The key used for
+	// signing will
+	// remain valid for at least 12 hours after the blob is signed. To
+	// verify the
+	// signature, you can retrieve the public key in several formats from
+	// the
+	// following endpoints:
+	//
+	// - RSA public key wrapped in an X.509 v3
+	// certificate:
+	// `https://www.googleapis.com/service_accounts/v1/metadata/
+	// x509/{ACCOUNT_EMAIL}`
+	// - Raw key in JSON
+	// format:
+	// `https://www.googleapis.com/service_accounts/v1/metadata/raw/{
+	// ACCOUNT_EMAIL}`
+	// - JSON Web Key
+	// (JWK):
+	// `https://www.googleapis.com/service_accounts/v1/metadata/jwk/{A
+	// CCOUNT_EMAIL}`
 	KeyId string `json:"keyId,omitempty"`
 
-	// SignedBlob: The signed blob.
+	// SignedBlob: The signature for the blob. Does not include the original
+	// blob.
+	//
+	// After the key pair referenced by the `key_id` response field
+	// expires,
+	// Google no longer exposes the public key that can be used to verify
+	// the
+	// blob. As a result, the receiver can no longer verify the signature.
 	SignedBlob string `json:"signedBlob,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
@@ -430,8 +461,16 @@ type SignJwtRequest struct {
 	// character is required; replacing it with a project ID is invalid.
 	Delegates []string `json:"delegates,omitempty"`
 
-	// Payload: The JWT payload to sign: a JSON object that contains a JWT
-	// Claims Set.
+	// Payload: Required. The JWT payload to sign. Must be a serialized JSON
+	// object that contains a
+	// JWT Claims Set. For example: `{"sub": "user@example.com", "iat":
+	// 313435}`
+	//
+	// If the JWT Claims Set contains an expiration time (`exp`) claim, it
+	// must be
+	// an integer timestamp that is not in the past and no more than 12
+	// hours in
+	// the future.
 	Payload string `json:"payload,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Delegates") to
@@ -458,10 +497,39 @@ func (s *SignJwtRequest) MarshalJSON() ([]byte, error) {
 }
 
 type SignJwtResponse struct {
-	// KeyId: The ID of the key used to sign the JWT.
+	// KeyId: The ID of the key used to sign the JWT. The key used for
+	// signing will
+	// remain valid for at least 12 hours after the JWT is signed. To verify
+	// the
+	// signature, you can retrieve the public key in several formats from
+	// the
+	// following endpoints:
+	//
+	// - RSA public key wrapped in an X.509 v3
+	// certificate:
+	// `https://www.googleapis.com/service_accounts/v1/metadata/
+	// x509/{ACCOUNT_EMAIL}`
+	// - Raw key in JSON
+	// format:
+	// `https://www.googleapis.com/service_accounts/v1/metadata/raw/{
+	// ACCOUNT_EMAIL}`
+	// - JSON Web Key
+	// (JWK):
+	// `https://www.googleapis.com/service_accounts/v1/metadata/jwk/{A
+	// CCOUNT_EMAIL}`
 	KeyId string `json:"keyId,omitempty"`
 
-	// SignedJwt: The signed JWT.
+	// SignedJwt: The signed JWT. Contains the automatically generated
+	// header; the
+	// client-supplied payload; and the signature, which is generated using
+	// the
+	// key referenced by the `kid` field in the header.
+	//
+	// After the key pair referenced by the `key_id` response field
+	// expires,
+	// Google no longer exposes the public key that can be used to verify
+	// the JWT.
+	// As a result, the receiver can no longer verify the signature.
 	SignedJwt string `json:"signedJwt,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
@@ -538,7 +606,7 @@ func (c *ProjectsServiceAccountsGenerateAccessTokenCall) Header() http.Header {
 
 func (c *ProjectsServiceAccountsGenerateAccessTokenCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -611,7 +679,7 @@ func (c *ProjectsServiceAccountsGenerateAccessTokenCall) Do(opts ...googleapi.Ca
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The resource name of the service account for which the credentials\nare requested, in the following format:\n`projects/-/serviceAccounts/{ACCOUNT_EMAIL_OR_UNIQUEID}`. The `-` wildcard\ncharacter is required; replacing it with a project ID is invalid.",
+	//       "description": "Required. The resource name of the service account for which the credentials\nare requested, in the following format:\n`projects/-/serviceAccounts/{ACCOUNT_EMAIL_OR_UNIQUEID}`. The `-` wildcard\ncharacter is required; replacing it with a project ID is invalid.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/serviceAccounts/[^/]+$",
 	//       "required": true,
@@ -679,7 +747,7 @@ func (c *ProjectsServiceAccountsGenerateIdTokenCall) Header() http.Header {
 
 func (c *ProjectsServiceAccountsGenerateIdTokenCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -752,7 +820,7 @@ func (c *ProjectsServiceAccountsGenerateIdTokenCall) Do(opts ...googleapi.CallOp
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The resource name of the service account for which the credentials\nare requested, in the following format:\n`projects/-/serviceAccounts/{ACCOUNT_EMAIL_OR_UNIQUEID}`. The `-` wildcard\ncharacter is required; replacing it with a project ID is invalid.",
+	//       "description": "Required. The resource name of the service account for which the credentials\nare requested, in the following format:\n`projects/-/serviceAccounts/{ACCOUNT_EMAIL_OR_UNIQUEID}`. The `-` wildcard\ncharacter is required; replacing it with a project ID is invalid.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/serviceAccounts/[^/]+$",
 	//       "required": true,
@@ -820,7 +888,7 @@ func (c *ProjectsServiceAccountsSignBlobCall) Header() http.Header {
 
 func (c *ProjectsServiceAccountsSignBlobCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -893,7 +961,7 @@ func (c *ProjectsServiceAccountsSignBlobCall) Do(opts ...googleapi.CallOption) (
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The resource name of the service account for which the credentials\nare requested, in the following format:\n`projects/-/serviceAccounts/{ACCOUNT_EMAIL_OR_UNIQUEID}`. The `-` wildcard\ncharacter is required; replacing it with a project ID is invalid.",
+	//       "description": "Required. The resource name of the service account for which the credentials\nare requested, in the following format:\n`projects/-/serviceAccounts/{ACCOUNT_EMAIL_OR_UNIQUEID}`. The `-` wildcard\ncharacter is required; replacing it with a project ID is invalid.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/serviceAccounts/[^/]+$",
 	//       "required": true,
@@ -961,7 +1029,7 @@ func (c *ProjectsServiceAccountsSignJwtCall) Header() http.Header {
 
 func (c *ProjectsServiceAccountsSignJwtCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.11.0 gdcl/20190802")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200707")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -1034,7 +1102,7 @@ func (c *ProjectsServiceAccountsSignJwtCall) Do(opts ...googleapi.CallOption) (*
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The resource name of the service account for which the credentials\nare requested, in the following format:\n`projects/-/serviceAccounts/{ACCOUNT_EMAIL_OR_UNIQUEID}`. The `-` wildcard\ncharacter is required; replacing it with a project ID is invalid.",
+	//       "description": "Required. The resource name of the service account for which the credentials\nare requested, in the following format:\n`projects/-/serviceAccounts/{ACCOUNT_EMAIL_OR_UNIQUEID}`. The `-` wildcard\ncharacter is required; replacing it with a project ID is invalid.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/serviceAccounts/[^/]+$",
 	//       "required": true,

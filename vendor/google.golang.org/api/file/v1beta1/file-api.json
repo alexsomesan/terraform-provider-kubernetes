@@ -22,6 +22,7 @@
   },
   "id": "file:v1beta1",
   "kind": "discovery#restDescription",
+  "mtlsRootUrl": "https://file.mtls.googleapis.com/",
   "name": "file",
   "ownerDomain": "google.com",
   "ownerName": "Google",
@@ -36,11 +37,6 @@
         "v1 error format",
         "v2 error format"
       ],
-      "location": "query",
-      "type": "string"
-    },
-    "access_token": {
-      "description": "OAuth access token.",
       "location": "query",
       "type": "string"
     },
@@ -72,11 +68,6 @@
     },
     "key": {
       "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
-      "location": "query",
-      "type": "string"
-    },
-    "oauth_token": {
-      "description": "OAuth 2.0 token for the current user.",
       "location": "query",
       "type": "string"
     },
@@ -147,6 +138,11 @@
                   "location": "query",
                   "type": "string"
                 },
+                "includeUnrevealedLocations": {
+                  "description": "If true, the returned list will include locations which are not yet\nrevealed.",
+                  "location": "query",
+                  "type": "boolean"
+                },
                 "name": {
                   "description": "The resource that owns the locations collection, if applicable.",
                   "location": "path",
@@ -188,12 +184,12 @@
                   ],
                   "parameters": {
                     "instanceId": {
-                      "description": "The name of the instance to create.\nThe name must be unique for the specified project and location.",
+                      "description": "Required. The ID of the instance to create.\nThe ID must be unique within the specified project and location.\n\nThis value must start with a lowercase letter followed by up to 62\nlowercase letters, numbers, or hyphens, and cannot end with a hyphen.",
                       "location": "query",
                       "type": "string"
                     },
                     "parent": {
-                      "description": "The instance's project and location, in the format\nprojects/{project_id}/locations/{location}. In Cloud Filestore,\nlocations map to GCP zones, for example **us-west1-b**.",
+                      "description": "Required. The instance's project and location, in the format\nprojects/{project_id}/locations/{location}. In Cloud Filestore,\nlocations map to GCP zones, for example **us-west1-b**.",
                       "location": "path",
                       "pattern": "^projects/[^/]+/locations/[^/]+$",
                       "required": true,
@@ -221,7 +217,7 @@
                   ],
                   "parameters": {
                     "name": {
-                      "description": "The instance resource name, in the format\nprojects/{project_id}/locations/{location}/instances/{instance_id}",
+                      "description": "Required. The instance resource name, in the format\nprojects/{project_id}/locations/{location}/instances/{instance_id}",
                       "location": "path",
                       "pattern": "^projects/[^/]+/locations/[^/]+/instances/[^/]+$",
                       "required": true,
@@ -246,7 +242,7 @@
                   ],
                   "parameters": {
                     "name": {
-                      "description": "The instance resource name, in the format\nprojects/{project_id}/locations/{location}/instances/{instance_id}.",
+                      "description": "Required. The instance resource name, in the format\nprojects/{project_id}/locations/{location}/instances/{instance_id}.",
                       "location": "path",
                       "pattern": "^projects/[^/]+/locations/[^/]+/instances/[^/]+$",
                       "required": true,
@@ -292,7 +288,7 @@
                       "type": "string"
                     },
                     "parent": {
-                      "description": "The project and location for which to retrieve instance information,\nin the format projects/{project_id}/locations/{location}. In Cloud\nFilestore, locations map to GCP zones, for example **us-west1-b**. To\nretrieve instance information for all locations, use \"-\" for the {location}\nvalue.",
+                      "description": "Required. The project and location for which to retrieve instance information,\nin the format projects/{project_id}/locations/{location}. In Cloud\nFilestore, locations map to GCP zones, for example **us-west1-b**. To\nretrieve instance information for all locations, use \"-\" for the {location}\nvalue.",
                       "location": "path",
                       "pattern": "^projects/[^/]+/locations/[^/]+$",
                       "required": true,
@@ -324,7 +320,7 @@
                       "type": "string"
                     },
                     "updateMask": {
-                      "description": "Mask of fields to update.  At least one path must be supplied in this\nfield.  The elements of the repeated paths field may only include these\nfields:\n\"description\"",
+                      "description": "Required. Mask of fields to update.  At least one path must be supplied in this\nfield.  The elements of the repeated paths field may only include these\nfields:\n\n* \"description\"\n* \"file_shares\"\n* \"labels\"",
                       "format": "google-fieldmask",
                       "location": "query",
                       "type": "string"
@@ -471,7 +467,7 @@
       }
     }
   },
-  "revision": "20190805",
+  "revision": "20200608",
   "rootUrl": "https://file.googleapis.com/",
   "schemas": {
     "CancelOperationRequest": {
@@ -498,12 +494,18 @@
         "name": {
           "description": "The name of the file share (must be 16 characters or less).",
           "type": "string"
+        },
+        "nfsExportOptions": {
+          "description": "Nfs Export Options.\nThere is a limit of 10 export options per file share.",
+          "items": {
+            "$ref": "NfsExportOptions"
+          },
+          "type": "array"
         }
       },
       "type": "object"
     },
     "GoogleCloudSaasacceleratorManagementProvidersV1Instance": {
-      "description": "Instance represents the interface for SLM services to actuate the state\nof control plane resources.\n\nExample Instance in JSON, where\n  consumer-project=snapchat,\n  producer-project=cloud-sql:\n\n```json\nInstance:\n{\n  \"name\":\n  \"projects/snapchat/locations/us-east1/instances/prod-instance\",\n  \"create_time\": {\n    \"seconds\": 1526406431,\n  },\n  \"labels\": {\n    \"env\": \"prod\",\n    \"foo\": \"bar\"\n  },\n  \"state\": READY,\n  \"software_versions\": {\n    \"software_update\": \"cloud-sql-09-28-2018\",\n  },\n  \"maintenance_policy_names\": {\n    \"UpdatePolicy\":\n    \"projects/snapchat/locations/us-east1/maintenancePolicies/prod-update-policy\",\n  }\n  \"rollout_metadata\": {\n    \"projects/cloud-sql/locations/global/rolloutTypes/software_update\": {\n      \"release\":\n      \"projects/cloud-sql/locations/global/releases/cloud-sql-09-28-2018\",\n      \"rollout\":\n      \"projects/cloud-sql/locations/us-east1/rollouts/cloud-sql-09-28-2018-canary\",\n    },\n    \"projects/cloud-sql/locations/global/rolloutTypes/instance_restart\": {\n      \"release\":\n      \"projects/cloud-sql/locations/global/releases/cloud-sql-09-20-repair\",\n      \"rollout\":\n      \"projects/cloud-sql/locations/us-east1/rollouts/cloud-sql-09-20-repair-100-percent\",\n    }\n  }\n  \"tenant_project_id\": \"cloud-sql-test-tenant\",\n  \"producer_metadata\": {\n    \"cloud-sql-tier\": \"basic\",\n    \"cloud-sql-instance-size\": \"1G\",\n  },\n  \"provisioned_resources\": [\n    {\n      \"resource-type\": \"compute-instance\",\n      \"resource-url\":\n      \"https://www.googleapis.com/compute/v1/projects/cloud-sql/zones/us-east1-b/instances/vm-1\",\n    }\n  ],\n  \"maintenance_schedules\": {\n    \"csa_rollout\": {\n       \"start_time\": {\n          \"seconds\": 1526406431,\n       },\n       \"end_time\": {\n          \"seconds\": 1535406431,\n       },\n    },\n    \"ncsa_rollout\": {\n       \"start_time\": {\n          \"seconds\": 1526406431,\n       },\n       \"end_time\": {\n          \"seconds\": 1535406431,\n       },\n    }\n  },\n  \"consumer_defined_name\": \"my-sql-instance1\",\n}\n```",
       "id": "GoogleCloudSaasacceleratorManagementProvidersV1Instance",
       "properties": {
         "consumerDefinedName": {
@@ -536,6 +538,10 @@
           "description": "The MaintenanceSchedule contains the scheduling information of published\nmaintenance schedule.",
           "type": "object"
         },
+        "maintenanceSettings": {
+          "$ref": "GoogleCloudSaasacceleratorManagementProvidersV1MaintenanceSettings",
+          "description": "Optional. The MaintenanceSettings associated with instance."
+        },
         "name": {
           "description": "Unique name of the resource. It uses the form:\n `projects/{project_id}/locations/{location_id}/instances/{instance_id}`",
           "type": "string"
@@ -554,12 +560,9 @@
           },
           "type": "array"
         },
-        "rolloutMetadata": {
-          "additionalProperties": {
-            "$ref": "GoogleCloudSaasacceleratorManagementProvidersV1RolloutMetadata"
-          },
-          "description": "The map between RolloutType and the corresponding RolloutMetadata.\nThis is only mutated by rollout service. For actuation implementation,\nthis information is pass-through for Rollout management. Producer shall\nnot modify by itself.\nFor update of a single entry in this map, the update field mask shall\nfollow this sementics: go/advanced-field-masks",
-          "type": "object"
+        "slmInstanceTemplate": {
+          "description": "Link to the SLM instance template. Only populated when updating SLM\ninstances via SSA's Actuation service adaptor.\nService producers with custom control plane (e.g. Cloud SQL) doesn't\nneed to populate this field. Instead they should use software_versions.",
+          "type": "string"
         },
         "sloMetadata": {
           "$ref": "GoogleCloudSaasacceleratorManagementProvidersV1SloMetadata",
@@ -580,7 +583,8 @@
             "READY",
             "UPDATING",
             "REPAIRING",
-            "DELETING"
+            "DELETING",
+            "ERROR"
           ],
           "enumDescriptions": [
             "Unspecified state.",
@@ -588,7 +592,8 @@
             "Instance has been created and is ready to use.",
             "Instance is being updated.",
             "Instance is unheathy and under repair.",
-            "Instance is being deleted."
+            "Instance is being deleted.",
+            "Instance encountered an error and is in indeterministic state."
           ],
           "type": "string"
         },
@@ -617,10 +622,25 @@
           "format": "google-datetime",
           "type": "string"
         },
+        "rolloutManagementPolicy": {
+          "description": "The rollout management policy this maintenance schedule is associated\nwith. When doing reschedule update request, the reschedule should be\nagainst this given policy.",
+          "type": "string"
+        },
         "startTime": {
           "description": "The scheduled start time for the maintenance.",
           "format": "google-datetime",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "GoogleCloudSaasacceleratorManagementProvidersV1MaintenanceSettings": {
+      "description": "Maintenance settings associated with instance. Allows service producers and\nend users to assign settings that controls maintenance on this instance.",
+      "id": "GoogleCloudSaasacceleratorManagementProvidersV1MaintenanceSettings",
+      "properties": {
+        "exclude": {
+          "description": "Optional. Exclude instance from maintenance. When true, rollout service will not\nattempt maintenance on the instance. Rollout service will include the\ninstance in reported rollout progress as not attempted.",
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -647,31 +667,6 @@
       },
       "type": "object"
     },
-    "GoogleCloudSaasacceleratorManagementProvidersV1NotificationMetadata": {
-      "description": "NotificationMetadata is the notification state for an instance.",
-      "id": "GoogleCloudSaasacceleratorManagementProvidersV1NotificationMetadata",
-      "properties": {
-        "rescheduled": {
-          "description": "Whether the instance update has been rescheduled.",
-          "type": "boolean"
-        },
-        "scheduledEndTime": {
-          "description": "The scheduled end time for the maintenance window during which update\ncan be performed on the instance.",
-          "format": "google-datetime",
-          "type": "string"
-        },
-        "scheduledStartTime": {
-          "description": "The scheduled start time for the maintenance window during which\nupdate can be performed on the instance.",
-          "format": "google-datetime",
-          "type": "string"
-        },
-        "targetRelease": {
-          "description": "The target release to be applied to the instance.",
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
     "GoogleCloudSaasacceleratorManagementProvidersV1ProvisionedResource": {
       "description": "Describes provisioned dataplane resources.",
       "id": "GoogleCloudSaasacceleratorManagementProvidersV1ProvisionedResource",
@@ -687,37 +682,28 @@
       },
       "type": "object"
     },
-    "GoogleCloudSaasacceleratorManagementProvidersV1RolloutMetadata": {
-      "description": "RolloutMetadata for an actuation instance. It maps to a single RolloutType.",
-      "id": "GoogleCloudSaasacceleratorManagementProvidersV1RolloutMetadata",
+    "GoogleCloudSaasacceleratorManagementProvidersV1SloEligibility": {
+      "description": "SloEligibility is a tuple containing eligibility value: true if an instance\nis eligible for SLO calculation or false if it should be excluded from all\nSLO-related calculations along with a user-defined reason.",
+      "id": "GoogleCloudSaasacceleratorManagementProvidersV1SloEligibility",
       "properties": {
-        "notification": {
-          "$ref": "GoogleCloudSaasacceleratorManagementProvidersV1NotificationMetadata",
-          "description": "Instance level notification metadata."
+        "eligible": {
+          "description": "Whether an instance is eligible or ineligible.",
+          "type": "boolean"
         },
-        "releaseName": {
-          "description": "The last Release that has been applied to the instance.",
-          "type": "string"
-        },
-        "rolloutName": {
-          "description": "The last rollout that has been applied to the instance.",
+        "reason": {
+          "description": "User-defined reason for the current value of instance eligibility. Usually,\nthis can be directly mapped to the internal state. An empty reason is\nallowed.",
           "type": "string"
         }
       },
       "type": "object"
     },
     "GoogleCloudSaasacceleratorManagementProvidersV1SloExclusion": {
-      "description": "SloExclusion represents an excusion in SLI calculation applies to all SLOs.",
+      "description": "SloExclusion represents an exclusion in SLI calculation applies to all SLOs.",
       "id": "GoogleCloudSaasacceleratorManagementProvidersV1SloExclusion",
       "properties": {
-        "exclusionDuration": {
+        "duration": {
           "description": "Exclusion duration. No restrictions on the possible values.\n\nWhen an ongoing operation is taking longer than initially expected,\nan existing entry in the exclusion list can be updated by extending the\nduration. This is supported by the subsystem exporting eligibility data\nas long as such extension is committed at least 10 minutes before the\noriginal exclusion expiration - otherwise it is possible that there will\nbe \"gaps\" in the exclusion application in the exported timeseries.",
           "format": "google-duration",
-          "type": "string"
-        },
-        "exclusionStartTime": {
-          "description": "Start time of the exclusion. No alignment (e.g. to a full minute) needed.",
-          "format": "google-datetime",
           "type": "string"
         },
         "reason": {
@@ -727,6 +713,11 @@
         "sliName": {
           "description": "Name of an SLI that this exclusion applies to. Can be left empty,\nsignaling that the instance should be excluded from all SLIs defined\nin the service SLO configuration.",
           "type": "string"
+        },
+        "startTime": {
+          "description": "Start time of the exclusion. No alignment (e.g. to a full minute) needed.",
+          "format": "google-datetime",
+          "type": "string"
         }
       },
       "type": "object"
@@ -735,15 +726,19 @@
       "description": "SloMetadata contains resources required for proper SLO classification of the\ninstance.",
       "id": "GoogleCloudSaasacceleratorManagementProvidersV1SloMetadata",
       "properties": {
+        "eligibility": {
+          "$ref": "GoogleCloudSaasacceleratorManagementProvidersV1SloEligibility",
+          "description": "Optional. User-defined instance eligibility."
+        },
         "exclusions": {
-          "description": "List of SLO exclusion windows. When multiple entries in the list match\n(matching the exclusion time-window against current time point)\nthe exclusion reason used in the first matching entry will be published.\n\nIt is not needed to include expired exclusion in this list, as only the\ncurrently applicable exclusions are taken into account by the eligibility\nexporting subsystem (the historical state of exclusions will be reflected\nin the historically produced timeseries regardless of the current state).\n\nThis field can be used to mark the instance as temporary ineligible\nfor the purpose of SLO calculation. For permanent instance SLO exclusion,\na dedicated tier name can be used that does not have targets specified\nin the service SLO configuration.",
+          "description": "List of SLO exclusion windows. When multiple entries in the list match\n(matching the exclusion time-window against current time point)\nthe exclusion reason used in the first matching entry will be published.\n\nIt is not needed to include expired exclusion in this list, as only the\ncurrently applicable exclusions are taken into account by the eligibility\nexporting subsystem (the historical state of exclusions will be reflected\nin the historically produced timeseries regardless of the current state).\n\nThis field can be used to mark the instance as temporary ineligible\nfor the purpose of SLO calculation. For permanent instance SLO exclusion,\nuse of custom instance eligibility is recommended. See 'eligibility' field\nbelow.",
           "items": {
             "$ref": "GoogleCloudSaasacceleratorManagementProvidersV1SloExclusion"
           },
           "type": "array"
         },
         "nodes": {
-          "description": "Optional: list of nodes.\nSome producers need to use per-node metadata to calculate SLO.\nThis field allows such producers to publish per-node SLO meta data,\nwhich will be consumed by SSA Eligibility Exporter and published in the\nform of per node metric to Monarch.",
+          "description": "Optional. List of nodes.\nSome producers need to use per-node metadata to calculate SLO.\nThis field allows such producers to publish per-node SLO meta data,\nwhich will be consumed by SSA Eligibility Exporter and published in the\nform of per node metric to Monarch.",
           "items": {
             "$ref": "GoogleCloudSaasacceleratorManagementProvidersV1NodeSloMetadata"
           },
@@ -766,7 +761,7 @@
           "type": "string"
         },
         "description": {
-          "description": "Optional. A description of the instance (2048 characters or less).",
+          "description": "The description of the instance (2048 characters or less).",
           "type": "string"
         },
         "etag": {
@@ -806,7 +801,8 @@
             "READY",
             "REPAIRING",
             "DELETING",
-            "ERROR"
+            "ERROR",
+            "RESTORING"
           ],
           "enumDescriptions": [
             "State not set.",
@@ -814,7 +810,8 @@
             "The instance is available for use.",
             "Work is being done on the instance. You can get further details from the\n`statusMessage` field of the `Instance` resource.",
             "The instance is shutting down.",
-            "The instance is experiencing an issue and might be unusable. You can get\nfurther details from the `statusMessage` field of the `Instance`\nresource."
+            "The instance is experiencing an issue and might be unusable. You can get\nfurther details from the `statusMessage` field of the `Instance`\nresource.",
+            "The instance is restoring a snapshot or backup to an existing file share\nand may be unusable during this time."
           ],
           "type": "string"
         },
@@ -827,12 +824,18 @@
           "enum": [
             "TIER_UNSPECIFIED",
             "STANDARD",
-            "PREMIUM"
+            "PREMIUM",
+            "BASIC_HDD",
+            "BASIC_SSD",
+            "HIGH_SCALE_SSD"
           ],
           "enumDescriptions": [
             "Not set.",
-            "STANDARD tier.",
-            "PREMIUM tier."
+            "STANDARD tier. BASIC_HDD is the preferred term for this tier.",
+            "PREMIUM tier. BASIC_SSD is the preferred term for this tier.",
+            "BASIC instances offer a maximum capacity of 63.9 TB.\nBASIC_HDD is an alias for STANDARD Tier, offering economical\nperformance backed by HDD.",
+            "BASIC instances offer a maximum capacity of 63.9 TB.\nBASIC_SSD is an alias for PREMIUM Tier, and offers improved\nperformance backed by SSD.",
+            "HIGH_SCALE instances offer expanded capacity and performance scaling\ncapabilities."
           ],
           "type": "string"
         }
@@ -965,7 +968,59 @@
           "type": "string"
         },
         "reservedIpRange": {
-          "description": "A /29 CIDR block in one of the\n[internal IP address\nranges](https://www.arin.net/knowledge/address_filters.html) that\nidentifies the range of IP addresses reserved for this instance. For\nexample, 10.0.0.0/29 or 192.168.0.0/29. The range you specify can't overlap\nwith either existing subnets or assigned IP address ranges for other Cloud\nFilestore instances in the selected VPC network.",
+          "description": "A /29 CIDR block for Basic or a /23 CIDR block for High Scale in one of the\n[internal IP address\nranges](https://www.arin.net/knowledge/address_filters.html) that\nidentifies the range of IP addresses reserved for this instance. For\nexample, 10.0.0.0/29 or 192.168.0.0/23. The range you specify can't overlap\nwith either existing subnets or assigned IP address ranges for other Cloud\nFilestore instances in the selected VPC network.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "NfsExportOptions": {
+      "description": "NFS export options specifications.",
+      "id": "NfsExportOptions",
+      "properties": {
+        "accessMode": {
+          "description": "Either READ_ONLY, for allowing only read requests on the exported\ndirectory, or READ_WRITE, for allowing both read and write requests.\nThe default is READ_WRITE.",
+          "enum": [
+            "ACCESS_MODE_UNSPECIFIED",
+            "READ_ONLY",
+            "READ_WRITE"
+          ],
+          "enumDescriptions": [
+            "AccessMode not set.",
+            "The client can only read the file share.",
+            "The client can read and write the file share (default)."
+          ],
+          "type": "string"
+        },
+        "anonGid": {
+          "description": "An integer representing the anonymous group id with a default value of\n65534.\nAnon_gid may only be set with squash_mode of ROOT_SQUASH.  An error will be\nreturned if this field is specified for other squash_mode settings.",
+          "format": "int64",
+          "type": "string"
+        },
+        "anonUid": {
+          "description": "An integer representing the anonymous user id with a default value of\n65534.\nAnon_uid may only be set with squash_mode of ROOT_SQUASH.  An error will be\nreturned if this field is specified for other squash_mode settings.",
+          "format": "int64",
+          "type": "string"
+        },
+        "ipRanges": {
+          "description": "List of either an IPv4 addresses in the format\n{octet 1}.{octet 2}.{octet 3}.{octet 4} or CIDR ranges in the format\n{octet 1}.{octet 2}.{octet 3}.{octet 4}/{mask size} which may mount the\nfile share.\nOverlapping IP ranges are not allowed, both within and across\nNfsExportOptions. An error will be returned.\nThe limit is 64 IP ranges/addresses for each FileShareConfig among all\nNfsExportOptions.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "squashMode": {
+          "description": "Either NO_ROOT_SQUASH, for allowing root access on the exported directory,\nor ROOT_SQUASH, for not allowing root access. The default is\nNO_ROOT_SQUASH.",
+          "enum": [
+            "SQUASH_MODE_UNSPECIFIED",
+            "NO_ROOT_SQUASH",
+            "ROOT_SQUASH"
+          ],
+          "enumDescriptions": [
+            "SquashMode not set.",
+            "The Root user has root access to the file share (default).",
+            "The Root user has squashed access to the anonymous uid/gid."
+          ],
           "type": "string"
         }
       },
