@@ -321,7 +321,7 @@ func (s *RawProviderServer) PlanResourceChange(ctx context.Context, req *tfproto
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityWarning,
 			Summary:  "This custom resource does not have an associated OpenAPI schema.",
-			Detail:   "We could not find an OpenAPI schema for this custom resource. Updates to this resource will cause a forced replacement.",
+			Detail:   "We could not find an OpenAPI schema for this custom resource.",
 		})
 
 		fieldManagerName, forceConflicts, err := s.getFieldManagerConfig(proposedVal)
@@ -342,11 +342,6 @@ func (s *RawProviderServer) PlanResourceChange(ctx context.Context, req *tfproto
 				Detail:   fmt.Sprintf("A dry-run apply was performed for this resource but was unsuccessful: %v", err),
 			})
 			return resp, nil
-		}
-
-		resp.RequiresReplace = []*tftypes.AttributePath{
-			tftypes.NewAttributePath().WithAttributeName("manifest"),
-			tftypes.NewAttributePath().WithAttributeName("object"),
 		}
 	}
 
@@ -434,8 +429,11 @@ func (s *RawProviderServer) PlanResourceChange(ctx context.Context, req *tfproto
 					h, ok := hints[morph.ValueToTypePath(ap).String()]
 					typeChanged := !(wasCfg.(tftypes.Value).Type().Equal(nowCfg.(tftypes.Value).Type()))
 					if ok && h == manifest.PreserveUnknownFieldsLabel && typeChanged {
-						apm := append(tftypes.NewAttributePath().WithAttributeName("manifest").Steps(), ap.Steps()...)
-						resp.RequiresReplace = append(resp.RequiresReplace, tftypes.NewAttributePathWithSteps(apm))
+						resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
+							Severity: tfprotov5.DiagnosticSeverityWarning,
+							Summary:  "Custom Resource without a schema has changed types",
+							Detail:   "Updates to this resource will force replacement.",
+						})
 					}
 				}
 				if isComputed {
