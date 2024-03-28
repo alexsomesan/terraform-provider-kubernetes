@@ -606,13 +606,17 @@ func (s *RawProviderServer) getTimeouts(v map[string]tftypes.Value) map[string]s
 	return timeouts
 }
 
+// findBackfillValue tries to optimistically find an attribute value pointed to by an attribute path (ap) inside 
+// a complex type container value (m) by making semantically equivalent adaptations to the attribute path steps.
+// It considers Object and Map types as semantically equivalent AFA indexing attributes goes.
 func findBackfillValue(m interface{}, ap *tftypes.AttributePath) (interface{}, *tftypes.AttributePath, error) {
 	v, restPath, err := tftypes.WalkAttributePath(m, ap)
 	if err != nil {
 		if len(restPath.Steps()) > 0 {
-			// attribute might not be found, but this can also mean that
-			// attribute path needs adjusting for type differences with "manifest"
-			// (core parses HCL to only Object and Tupple, but not Map and List)
+			// Attribute might not be found, because the attribute path step type  doesn't matcht 
+			// the container type being indexed (core parses HCL to only Object and Tupple, but not Map and List).
+			// In that case, the attribute paths constructed for values in "object" 
+			// will need adjusting for type differences between "manifest"
 			fs := restPath.Steps()[0]
 			if e, ok := fs.(tftypes.ElementKeyString); ok {
 				// if expecting a Map, try indexing with AttributeName instead
