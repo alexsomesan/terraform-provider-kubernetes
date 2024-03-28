@@ -192,17 +192,13 @@ func (s *RawProviderServer) ApplyResourceChange(ctx context.Context, req *tfprot
 			if !isComputed {
 				return v, nil
 			}
-			if v.IsKnown() {
-				return v, nil
-			}
-			ppMan, restPath, err := tftypes.WalkAttributePath(plannedStateVal["manifest"], ap)
+
+			ppMan, restPath, err := findBackfillValue(plannedStateVal["manifest"], ap)
 			if err != nil {
-				if len(restPath.Steps()) > 0 {
-					// attribute not in manifest
-					return v, nil
-				}
-				return v, ap.NewError(err)
+				// report error
+				return v, restPath.NewError(err)
 			}
+
 			nv, d := morph.ValueToType(ppMan.(tftypes.Value), v.Type(), tftypes.NewAttributePath())
 			if len(d) > 0 {
 				resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
@@ -608,4 +604,36 @@ func (s *RawProviderServer) getTimeouts(v map[string]tftypes.Value) map[string]s
 		}
 	}
 	return timeouts
+}
+
+func findBackfillValue(m interface{}, ap *tftypes.AttributePath) (interface{}, *tftypes.AttributePath, error) {
+	v, restPath, err := tftypes.WalkAttributePath(m, ap)
+	if err != nil {
+		if len(restPath.Steps()) > 0 {
+			// attribute might not be found, but this can also mean that
+			// attribute path needs adjusting for type differences with "manifest"
+			// (core parses HCL to only Object and Tupple, but not Map and List)
+			fs := restPath.Steps()[0]
+			if e, ok := fs.(tftypes.ElementKeyString); ok {
+				// if expecting a Map, try indexing with AttributeName instead
+				tp := tftypes.NewAttributePath().WithAttributeName(string(e))
+				tv, rp, err := tftypes.WalkAttributePath(v, tp)
+				if err != nil {
+					return v, rp, err
+				}
+				return findBackfillValue(tv, tftypes.NewAttributePathWithSteps(restPath.Steps()[1:]))
+			}
+			if e, ok := fs.(tftypes.AttributeName); ok {
+				// if expecting an Object, try indexing with ElementKeyString instead
+				tp := tftypes.NewAttributePath().WithElementKeyString(string(e))
+				tv, rp, err := tftypes.WalkAttributePath(v, tp)
+				if err != nil {
+					return v, rp, err
+				}
+				return findBackfillValue(tv, tftypes.NewAttributePathWithSteps(restPath.Steps()[1:]))
+			}
+		}
+		return nil, nil, err
+	}
+	return v, restPath, err
 }
